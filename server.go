@@ -63,7 +63,8 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       }
       matches = reLocationAvg.FindStringSubmatch(r.URL.Path)
       if len(matches) > 0 {
-        actionGetLocationAvg(w, r, parseID(matches[1]))
+        v := r.URL.Query()
+        actionGetLocationAvg(w, r, parseID(matches[1]), v)
         return
       }
     case "POST":
@@ -76,7 +77,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         l := Location{}
         err := decoder.Decode(&l)
         if err != nil {
-          responseError(w, http.StatusBadRequest)
+          responseStatus(w, http.StatusBadRequest)
           return
         }
         actionUpdateLocation(w, r, parseID(matches[1]), l)
@@ -90,7 +91,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         u := User{}
         err := decoder.Decode(&u)
         if err != nil {
-          responseError(w, http.StatusBadRequest)
+          responseStatus(w, http.StatusBadRequest)
           return
         }
         actionUpdateUser(w, r, parseID(matches[1]), u)
@@ -104,7 +105,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         v := Visit{}
         err := decoder.Decode(&v)
         if err != nil {
-          responseError(w, http.StatusBadRequest)
+          responseStatus(w, http.StatusBadRequest)
           return
         }
         actionUpdateVisit(w, r, parseID(matches[1]), v)
@@ -118,7 +119,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         l := Location{}
         err := decoder.Decode(&l)
         if err != nil {
-          responseError(w, http.StatusBadRequest)
+          responseStatus(w, http.StatusBadRequest)
           return
         }
         actionNewLocation(w, r, l)
@@ -131,7 +132,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         u := User{}
         err := decoder.Decode(&u)
         if err != nil {
-          responseError(w, http.StatusBadRequest)
+          responseStatus(w, http.StatusBadRequest)
           return
         }
         actionNewUser(w, r, u)
@@ -144,7 +145,7 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         v := Visit{}
         err := decoder.Decode(&v)
         if err != nil {
-          responseError(w, http.StatusBadRequest)
+          responseStatus(w, http.StatusBadRequest)
           return
         }
         actionNewVisit(w, r, v)
@@ -152,13 +153,13 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       }
   }
 
-  responseError(w, http.StatusNotFound)
+  responseStatus(w, http.StatusNotFound)
 }
 
 func actionGetLocation(w http.ResponseWriter, r *http.Request, id uint32) {
   l := GetLocation(id)
   if l.ID == 0 {
-    responseError(w, http.StatusNotFound)
+    responseStatus(w, http.StatusNotFound)
     return
   }
   responseJSON(w, l)
@@ -167,7 +168,7 @@ func actionGetLocation(w http.ResponseWriter, r *http.Request, id uint32) {
 func actionGetUser(w http.ResponseWriter, r *http.Request, id uint32) {
   u := GetUser(id)
   if u.ID == 0 {
-    responseError(w, http.StatusNotFound)
+    responseStatus(w, http.StatusNotFound)
     return
   }
   responseJSON(w, u)
@@ -176,7 +177,7 @@ func actionGetUser(w http.ResponseWriter, r *http.Request, id uint32) {
 func actionGetVisit(w http.ResponseWriter, r *http.Request, id uint32) {
   v := GetVisit(id)
   if v.ID == 0 {
-    responseError(w, http.StatusNotFound)
+    responseStatus(w, http.StatusNotFound)
     return
   }
   responseJSON(w, v)
@@ -189,7 +190,7 @@ type UserVisitsResponse struct {
 func actionGetUserVisits(w http.ResponseWriter, r *http.Request, userID uint32, v url.Values) {
   visits, err := GetUserVisits(userID, v)
   if err != nil {
-    responseError(w, http.StatusNotFound)
+    responseStatus(w, http.StatusNotFound)
     return
   }
   responseJSON(w, UserVisitsResponse{visits})
@@ -199,10 +200,10 @@ type LocationAvgResponse struct {
   Avg float32 `json:"avg"`
 }
 
-func actionGetLocationAvg(w http.ResponseWriter, r *http.Request, id uint32) {
-  avg, err := GetLocationAvg(id)
+func actionGetLocationAvg(w http.ResponseWriter, r *http.Request, id uint32, v url.Values) {
+  avg, err := GetLocationAvg(id, v)
   if err != nil {
-    responseError(w, http.StatusNotFound)
+    responseStatus(w, http.StatusNotFound)
     return
   }
   responseJSON(w, LocationAvgResponse{avg})
@@ -212,7 +213,7 @@ type DummyResponse struct {}
 
 func actionUpdateLocation(w http.ResponseWriter, r *http.Request, id uint32, l Location) {
   if err := UpdateLocation(id, l); err != nil {
-    responseError(w, http.StatusNotFound)
+    responseError(w, err)
     return
   }
   responseJSON(w, DummyResponse{})
@@ -220,7 +221,7 @@ func actionUpdateLocation(w http.ResponseWriter, r *http.Request, id uint32, l L
 
 func actionUpdateUser(w http.ResponseWriter, r *http.Request, id uint32, u User) {
   if err := UpdateUser(id, u); err != nil {
-    responseError(w, http.StatusNotFound)
+    responseError(w, err)
     return
   }
   responseJSON(w, DummyResponse{})
@@ -228,7 +229,7 @@ func actionUpdateUser(w http.ResponseWriter, r *http.Request, id uint32, u User)
 
 func actionUpdateVisit(w http.ResponseWriter, r *http.Request, id uint32, v Visit) {
   if err := UpdateVisit(id, v); err != nil {
-    responseError(w, http.StatusNotFound)
+    responseError(w, err)
     return
   }
   responseJSON(w, DummyResponse{})
@@ -236,7 +237,7 @@ func actionUpdateVisit(w http.ResponseWriter, r *http.Request, id uint32, v Visi
 
 func actionNewLocation(w http.ResponseWriter, r *http.Request, l Location) {
   if err := AddLocation(l); err != nil {
-    responseError(w, http.StatusBadRequest)
+    responseError(w, err)
     return
   }
   responseJSON(w, DummyResponse{})
@@ -244,7 +245,7 @@ func actionNewLocation(w http.ResponseWriter, r *http.Request, l Location) {
 
 func actionNewUser(w http.ResponseWriter, r *http.Request, u User) {
   if err := AddUser(u); err != nil {
-    responseError(w, http.StatusBadRequest)
+    responseError(w, err)
     return
   }
   responseJSON(w, DummyResponse{})
@@ -252,20 +253,28 @@ func actionNewUser(w http.ResponseWriter, r *http.Request, u User) {
 
 func actionNewVisit(w http.ResponseWriter, r *http.Request, v Visit) {
   if err := AddVisit(v); err != nil {
-    responseError(w, http.StatusBadRequest)
+    responseError(w, err)
     return
   }
   responseJSON(w, DummyResponse{})
 }
 
-func responseError(w http.ResponseWriter, status int) {
+func responseStatus(w http.ResponseWriter, status int) {
   w.WriteHeader(status)
+}
+
+func responseError(w http.ResponseWriter, err error) {
+  status := http.StatusBadRequest
+  if err == ErrNotFound {
+    status = http.StatusNotFound
+  }
+  responseStatus(w, status)
 }
 
 func responseJSON(w http.ResponseWriter, data interface{}) {
   body, err := json.Marshal(data)
   if err != nil {
-    responseError(w, http.StatusBadRequest)
+    responseStatus(w, http.StatusBadRequest)
     return
   }
   w.Write(body)
