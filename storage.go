@@ -2,114 +2,148 @@ package main
 
 import (
   "errors"
+  "net/url"
   "sort"
+  "strconv"
 )
 
 var ErrNotFound = errors.New("not found")
+var ErrBadParams = errors.New("bad params")
 
 // TODO other storage or safe io
-var locations = []Location{}
-var users = []User{}
-var visits = []Visit{}
+var locations = map[uint32]Location{}
+var users = map[uint32]User{}
+var visits = map[uint32]Visit{}
 
 func AddLocation(l Location) error {
-  locations = append(locations, l)
+  _, ok := locations[l.ID]
+  if ok {
+    return ErrBadParams
+  }
+  locations[l.ID] = l
   return nil
 }
 
 func AddUser(u User) error {
-  users = append(users, u)
+  _, ok := users[u.ID]
+  if ok {
+    return ErrBadParams
+  }
+  users[u.ID] = u
   return nil
 }
 
 func AddVisit(v Visit) error {
-  visits = append(visits, v)
+  _, ok := visits[v.ID]
+  if ok {
+    return ErrBadParams
+  }
+  visits[v.ID] = v
   return nil
 }
 
 func UpdateLocation(id uint32, ul Location) error {
-  for i, l := range locations {
-    if l.ID == id {
-      locations[i] = ul
-      return nil
-    }
+  _, ok := locations[ul.ID]
+  if !ok {
+    return ErrNotFound
   }
-  return ErrNotFound
+  locations[ul.ID] = ul
+  return nil
 }
 
 func UpdateUser(id uint32, uu User) error {
-  for i, u := range users {
-    if u.ID == id {
-      users[i] = uu
-      return nil
-    }
+  _, ok := users[uu.ID]
+  if !ok {
+    return ErrNotFound
   }
-  return ErrNotFound
+  users[uu.ID] = uu
+  return nil
 }
 
 func UpdateVisit(id uint32, uv Visit) error {
-  for i, v := range visits {
-    if v.ID == id {
-      visits[i] = uv
-      return nil
-    }
+  _, ok := visits[uv.ID]
+  if !ok {
+    return ErrNotFound
   }
-  return ErrNotFound
+  visits[uv.ID] = uv
+  return nil
 }
 
 func GetLocation(id uint32) Location {
-  for _, l := range locations {
-    if l.ID == id {
-      return l
-    }
-  }
-  return Location{}
+  return locations[id]
 }
 
 func GetUser(id uint32) User {
-  for _, u := range users {
-    if u.ID == id {
-      return u
-    }
-  }
-  return User{}
+  return users[id]
 }
 
 func GetVisit(id uint32) Visit {
-  for _, v := range visits {
-    if v.ID == id {
-      return v
-    }
-  }
-  return Visit{}
+  return visits[id]
 }
 
-type VisitsByDate []Visit
-func (a VisitsByDate) Len() int {
-  return len(a)
+type VisitsByDate []UserVisit
+func (v VisitsByDate) Len() int {
+  return len(v)
 }
-func (a VisitsByDate) Swap(i, j int) {
-  a[i], a[j] = a[j], a[i]
+func (v VisitsByDate) Swap(i, j int) {
+  v[i], v[j] = v[j], v[i]
 }
-func (a VisitsByDate) Less(i, j int) bool {
-  return a[i].VisitedAt < a[j].VisitedAt
+func (v VisitsByDate) Less(i, j int) bool {
+  return v[i].VisitedAt < v[j].VisitedAt
 }
 
-func GetUserVisits(userID uint32) ([]Visit, error) {
+func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
   userVisits := VisitsByDate{}
-  ok := false
-  for _, u := range users {
-    if u.ID == userID {
-      ok = true
-      break
-    }
-  }
-  if !ok {
+  if GetUser(userID).ID == 0 {
     return userVisits, ErrNotFound
   }
+  var err error
+  fromDateStr, fromDateOK := v["fromDate"]
+  fromDate := 0
+  if fromDateOK {
+    fromDate, err = strconv.Atoi(fromDateStr[0])
+    if err != nil {
+      return userVisits, ErrBadParams
+    }
+  }
+  toDateStr, toDateOK := v["toDate"]
+  toDate := 0
+  if toDateOK {
+    toDate, err = strconv.Atoi(toDateStr[0])
+    if err != nil {
+      return userVisits, ErrBadParams
+    }
+  }
+  // country, countryOK := v["country"]
+  // toDistanceStr, toDistanceOK := v["toDistance"]
+  // toDistance := 0
+  // if toDistanceOK {
+  //   toDistance, err = strconv.Atoi(toDistanceStr[0])
+  //   if err != nil {
+  //     return userVisits, ErrBadParams
+  //   }
+  // }
   for _, v := range visits {
     if v.User == userID {
-      userVisits = append(userVisits, v)
+      if fromDateOK && v.VisitedAt <= fromDate {
+        continue
+      }
+      if toDateOK && v.VisitedAt >= toDate {
+        continue
+      }
+      // if toDistanceOK && v.Distance >= toDistance {
+      //   continue
+      // }
+      // if countryOK && v.Country != country {
+      //   continue
+      // }
+      l := GetLocation(v.Location)
+      uv := UserVisit{
+        Mark: v.Mark,
+        VisitedAt: v.VisitedAt,
+        Place: l.Place,
+      }
+      userVisits = append(userVisits, uv)
     }
   }
   sort.Sort(userVisits)
@@ -117,14 +151,7 @@ func GetUserVisits(userID uint32) ([]Visit, error) {
 }
 
 func GetLocationAvg(id uint32) (float32, error) {
-  ok := false
-  for _, l := range locations {
-    if l.ID == id {
-      ok = true
-      break
-    }
-  }
-  if !ok {
+  if GetLocation(id).ID == 0 {
     return 0, ErrNotFound
   }
   count := 0
@@ -135,6 +162,6 @@ func GetLocationAvg(id uint32) (float32, error) {
       sum += v.Mark
     }
   }
-  avg := float32(count) / float32(sum)
-  return avg, nil
+  avg := Round(float64(sum) / float64(count), .5, 5)
+  return float32(avg), nil
 }

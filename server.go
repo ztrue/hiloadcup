@@ -4,6 +4,7 @@ import (
   "encoding/json"
   "log"
   "net/http"
+  "net/url"
   "regexp"
   "strconv"
 )
@@ -18,14 +19,14 @@ var reNewUser *regexp.Regexp
 var reNewVisit *regexp.Regexp
 
 func Prepare() {
-  reLocation = regexp.MustCompile("/locations/(\\d+)")
-  reUser = regexp.MustCompile("/users/(\\d+)")
-  reVisit = regexp.MustCompile("/visits/(\\d+)")
-  reUserVisits = regexp.MustCompile("/users/(\\d+)/visits")
-  reLocationAvg = regexp.MustCompile("/locations/(\\d+)/avg")
-  reNewLocation = regexp.MustCompile("/locations/(\\d+)/new")
-  reNewUser = regexp.MustCompile("/users/(\\d+)/new")
-  reNewVisit = regexp.MustCompile("/visits/(\\d+)/new")
+  reLocation = regexp.MustCompile("^/locations/(\\d+)$")
+  reUser = regexp.MustCompile("^/users/(\\d+)$")
+  reVisit = regexp.MustCompile("^/visits/(\\d+)$")
+  reUserVisits = regexp.MustCompile("^/users/(\\d+)/visits$")
+  reLocationAvg = regexp.MustCompile("^/locations/(\\d+)/avg$")
+  reNewLocation = regexp.MustCompile("^/locations/new$")
+  reNewUser = regexp.MustCompile("^/users/new$")
+  reNewVisit = regexp.MustCompile("^/visits/new$")
 }
 
 func Serve(addr string) error {
@@ -56,7 +57,8 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       }
       matches = reUserVisits.FindStringSubmatch(r.URL.Path)
       if len(matches) > 0 {
-        actionGetUserVisits(w, r, parseID(matches[1]))
+        v := r.URL.Query()
+        actionGetUserVisits(w, r, parseID(matches[1]), v)
         return
       }
       matches = reLocationAvg.FindStringSubmatch(r.URL.Path)
@@ -181,11 +183,11 @@ func actionGetVisit(w http.ResponseWriter, r *http.Request, id uint32) {
 }
 
 type UserVisitsResponse struct {
-  Visits []Visit `json:"visits"`
+  Visits []UserVisit `json:"visits"`
 }
 
-func actionGetUserVisits(w http.ResponseWriter, r *http.Request, userID uint32) {
-  visits, err := GetUserVisits(userID)
+func actionGetUserVisits(w http.ResponseWriter, r *http.Request, userID uint32, v url.Values) {
+  visits, err := GetUserVisits(userID, v)
   if err != nil {
     responseError(w, http.StatusNotFound)
     return
@@ -263,7 +265,8 @@ func responseError(w http.ResponseWriter, status int) {
 func responseJSON(w http.ResponseWriter, data interface{}) {
   body, err := json.Marshal(data)
   if err != nil {
-    log.Fatal(err)
+    responseError(w, http.StatusBadRequest)
+    return
   }
   w.Write(body)
 }

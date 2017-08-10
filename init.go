@@ -16,12 +16,12 @@ func Import(src, dst string) error {
   }
   List(dst)
   log.Println(files)
-  for _, f := range files {
-    go func(filename string) {
+  for _, filename := range files {
+    // go func(filename string) {
       if err := Parse(filename); err != nil {
         log.Fatal(err)
       }
-    }(f)
+    // }(filename)
   }
   time.Sleep(3 * time.Second)
   // log.Println(GetUsers())
