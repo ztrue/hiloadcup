@@ -95,25 +95,46 @@ func (a VisitsByDate) Less(i, j int) bool {
   return a[i].VisitedAt < a[j].VisitedAt
 }
 
-func GetUserVisits(userID uint32) []Visit {
+func GetUserVisits(userID uint32) ([]Visit, error) {
   userVisits := VisitsByDate{}
+  ok := false
+  for _, u := range users {
+    if u.ID == userID {
+      ok = true
+      break
+    }
+  }
+  if !ok {
+    return userVisits, ErrNotFound
+  }
   for _, v := range visits {
     if v.User == userID {
       userVisits = append(userVisits, v)
     }
   }
   sort.Sort(userVisits)
-  return userVisits
+  return userVisits, nil
 }
 
-func GetLocations() []Location {
-  return locations
-}
-
-func GetUsers() []User {
-  return users
-}
-
-func GetVisits() []Visit {
-  return visits
+func GetLocationAvg(id uint32) (float32, error) {
+  ok := false
+  for _, l := range locations {
+    if l.ID == id {
+      ok = true
+      break
+    }
+  }
+  if !ok {
+    return 0, ErrNotFound
+  }
+  count := 0
+  sum := 0
+  for _, v := range visits {
+    if v.Location == id {
+      count++
+      sum += v.Mark
+    }
+  }
+  avg := float32(count) / float32(sum)
+  return avg, nil
 }

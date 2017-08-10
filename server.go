@@ -59,6 +59,11 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
         actionGetUserVisits(w, r, parseID(matches[1]))
         return
       }
+      matches = reLocationAvg.FindStringSubmatch(r.URL.Path)
+      if len(matches) > 0 {
+        actionGetLocationAvg(w, r, parseID(matches[1]))
+        return
+      }
     case "POST":
       // update
       matches = reLocation.FindStringSubmatch(r.URL.Path)
@@ -180,44 +185,75 @@ type UserVisitsResponse struct {
 }
 
 func actionGetUserVisits(w http.ResponseWriter, r *http.Request, userID uint32) {
-  visits := GetUserVisits(userID)
+  visits, err := GetUserVisits(userID)
+  if err != nil {
+    responseError(w, http.StatusNotFound)
+    return
+  }
   responseJSON(w, UserVisitsResponse{visits})
 }
+
+type LocationAvgResponse struct {
+  Avg float32 `json:"avg"`
+}
+
+func actionGetLocationAvg(w http.ResponseWriter, r *http.Request, id uint32) {
+  avg, err := GetLocationAvg(id)
+  if err != nil {
+    responseError(w, http.StatusNotFound)
+    return
+  }
+  responseJSON(w, LocationAvgResponse{avg})
+}
+
+type DummyResponse struct {}
 
 func actionUpdateLocation(w http.ResponseWriter, r *http.Request, id uint32, l Location) {
   if err := UpdateLocation(id, l); err != nil {
     responseError(w, http.StatusNotFound)
+    return
   }
+  responseJSON(w, DummyResponse{})
 }
 
 func actionUpdateUser(w http.ResponseWriter, r *http.Request, id uint32, u User) {
   if err := UpdateUser(id, u); err != nil {
     responseError(w, http.StatusNotFound)
+    return
   }
+  responseJSON(w, DummyResponse{})
 }
 
 func actionUpdateVisit(w http.ResponseWriter, r *http.Request, id uint32, v Visit) {
   if err := UpdateVisit(id, v); err != nil {
     responseError(w, http.StatusNotFound)
+    return
   }
+  responseJSON(w, DummyResponse{})
 }
 
 func actionNewLocation(w http.ResponseWriter, r *http.Request, l Location) {
   if err := AddLocation(l); err != nil {
     responseError(w, http.StatusBadRequest)
+    return
   }
+  responseJSON(w, DummyResponse{})
 }
 
 func actionNewUser(w http.ResponseWriter, r *http.Request, u User) {
   if err := AddUser(u); err != nil {
     responseError(w, http.StatusBadRequest)
+    return
   }
+  responseJSON(w, DummyResponse{})
 }
 
 func actionNewVisit(w http.ResponseWriter, r *http.Request, v Visit) {
   if err := AddVisit(v); err != nil {
     responseError(w, http.StatusBadRequest)
+    return
   }
+  responseJSON(w, DummyResponse{})
 }
 
 func responseError(w http.ResponseWriter, status int) {
