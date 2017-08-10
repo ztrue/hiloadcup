@@ -114,15 +114,16 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
       return userVisits, ErrBadParams
     }
   }
-  // country, countryOK := v["country"]
-  // toDistanceStr, toDistanceOK := v["toDistance"]
-  // toDistance := 0
-  // if toDistanceOK {
-  //   toDistance, err = strconv.Atoi(toDistanceStr[0])
-  //   if err != nil {
-  //     return userVisits, ErrBadParams
-  //   }
-  // }
+  country, countryOK := v["country"]
+  toDistanceStr, toDistanceOK := v["toDistance"]
+  toDistance := uint32(0)
+  if toDistanceOK {
+    toDistance64, err := strconv.ParseUint(toDistanceStr[0], 10, 32)
+    if err != nil {
+      return userVisits, ErrBadParams
+    }
+    toDistance = uint32(toDistance64)
+  }
   for _, v := range visits {
     if v.User == userID {
       if fromDateOK && v.VisitedAt <= fromDate {
@@ -131,13 +132,16 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
       if toDateOK && v.VisitedAt >= toDate {
         continue
       }
-      // if toDistanceOK && v.Distance >= toDistance {
-      //   continue
-      // }
-      // if countryOK && v.Country != country {
-      //   continue
-      // }
       l := GetLocation(v.Location)
+      if l.ID == 0 {
+        continue
+      }
+      if toDistanceOK && l.Distance >= toDistance {
+        continue
+      }
+      if countryOK && l.Country != country[0] {
+        continue
+      }
       uv := UserVisit{
         Mark: v.Mark,
         VisitedAt: v.VisitedAt,
