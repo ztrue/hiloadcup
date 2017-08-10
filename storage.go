@@ -1,5 +1,9 @@
 package main
 
+import (
+  "sort"
+)
+
 // TODO other storage or safe io
 var locations = []Location{}
 var users = []User{}
@@ -45,6 +49,28 @@ func GetVisit(id uint32) Visit {
     }
   }
   return Visit{}
+}
+
+type VisitsByDate []Visit
+func (a VisitsByDate) Len() int {
+  return len(a)
+}
+func (a VisitsByDate) Swap(i, j int) {
+  a[i], a[j] = a[j], a[i]
+}
+func (a VisitsByDate) Less(i, j int) bool {
+  return a[i].VisitedAt < a[j].VisitedAt
+}
+
+func GetUserVisits(userID uint32) []Visit {
+  userVisits := VisitsByDate{}
+  for _, v := range visits {
+    if v.User == userID {
+      userVisits = append(userVisits, v)
+    }
+  }
+  sort.Sort(userVisits)
+  return userVisits
 }
 
 func GetLocations() []Location {
