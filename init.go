@@ -24,7 +24,7 @@ func Import(src, dst string) error {
     }(f)
   }
   time.Sleep(3 * time.Second)
-  log.Println(GetUsers())
+  // log.Println(GetUsers())
   return nil
 }
 
