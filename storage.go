@@ -1,8 +1,11 @@
 package main
 
 import (
+  "errors"
   "sort"
 )
+
+var ErrNotFound = errors.New("not found")
 
 // TODO other storage or safe io
 var locations = []Location{}
@@ -22,6 +25,36 @@ func AddUser(u User) error {
 func AddVisit(v Visit) error {
   visits = append(visits, v)
   return nil
+}
+
+func UpdateLocation(id uint32, ul Location) error {
+  for i, l := range locations {
+    if l.ID == id {
+      locations[i] = ul
+      return nil
+    }
+  }
+  return ErrNotFound
+}
+
+func UpdateUser(id uint32, uu User) error {
+  for i, u := range users {
+    if u.ID == id {
+      users[i] = uu
+      return nil
+    }
+  }
+  return ErrNotFound
+}
+
+func UpdateVisit(id uint32, uv Visit) error {
+  for i, v := range visits {
+    if v.ID == id {
+      visits[i] = uv
+      return nil
+    }
+  }
+  return ErrNotFound
 }
 
 func GetLocation(id uint32) Location {
