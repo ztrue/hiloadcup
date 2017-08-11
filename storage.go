@@ -1,7 +1,10 @@
 package main
 
 import (
+  "encoding/json"
   "errors"
+  "fmt"
+  "log"
   "sort"
   "strconv"
   "sync"
@@ -20,6 +23,16 @@ var locations = map[uint32]Location{}
 var users = map[uint32]User{}
 var visits = map[uint32]Visit{}
 
+func CacheRecord(entity string, id uint32, record interface{}) {
+  data, err := json.Marshal(record)
+  if err != nil {
+    log.Println(err)
+  } else {
+    key := fmt.Sprintf("/%s/%d", entity, id)
+    CacheSet(key, data)
+  }
+}
+
 func AddLocation(l Location) error {
   if err := l.Validate(); err != nil {
     return ErrBadParams
@@ -33,6 +46,7 @@ func AddLocation(l Location) error {
   ml.Lock()
   locations[l.ID] = l
   ml.Unlock()
+  CacheRecord("locations", l.ID, l)
   return nil
 }
 
@@ -49,6 +63,7 @@ func AddUser(u User) error {
   mu.Lock()
   users[u.ID] = u
   mu.Unlock()
+  CacheRecord("users", u.ID, u)
   return nil
 }
 
@@ -65,6 +80,7 @@ func AddVisit(v Visit) error {
   mv.Lock()
   visits[v.ID] = v
   mv.Unlock()
+  CacheRecord("visits", v.ID, v)
   return nil
 }
 
@@ -96,6 +112,7 @@ func UpdateLocation(id uint32, ul Location) error {
   ml.Lock()
   locations[ul.ID] = ul
   ml.Unlock()
+  CacheRecord("locations", id, ul)
   return nil
 }
 
@@ -130,6 +147,7 @@ func UpdateUser(id uint32, uu User) error {
   mu.Lock()
   users[uu.ID] = uu
   mu.Unlock()
+  CacheRecord("users", id, uu)
   return nil
 }
 
@@ -161,6 +179,7 @@ func UpdateVisit(id uint32, uv Visit) error {
   mv.Lock()
   visits[uv.ID] = uv
   mv.Unlock()
+  CacheRecord("visits", id, uv)
   return nil
 }
 

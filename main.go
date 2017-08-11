@@ -12,7 +12,7 @@ var dataPath = "/tmp/unzip"
 var httpAddr = ":80"
 
 func main() {
-  log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Lshortfile | log.LUTC)
+  log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile | log.LUTC)
   if err := Import(archivePath, dataPath); err != nil {
     log.Fatal(err)
   }

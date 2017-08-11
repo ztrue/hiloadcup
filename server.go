@@ -36,31 +36,38 @@ func Serve(addr string) error {
 
 func route(ctx *fasthttp.RequestCtx) {
   matches := []string{}
+  path := string(ctx.Path())
 
   switch string(ctx.Method()) {
     case "GET":
-      matches = reLocation.FindStringSubmatch(string(ctx.Path()))
+      cached, ok := CacheGet(path)
+      if ok {
+        responseBytes(ctx, cached)
+        return
+      }
+
+      matches = reLocation.FindStringSubmatch(path)
       if len(matches) > 0 {
         actionGetLocation(ctx, parseID(matches[1]))
         return
       }
-      matches = reUser.FindStringSubmatch(string(ctx.Path()))
+      matches = reUser.FindStringSubmatch(path)
       if len(matches) > 0 {
         actionGetUser(ctx, parseID(matches[1]))
         return
       }
-      matches = reVisit.FindStringSubmatch(string(ctx.Path()))
+      matches = reVisit.FindStringSubmatch(path)
       if len(matches) > 0 {
         actionGetVisit(ctx, parseID(matches[1]))
         return
       }
-      matches = reUserVisits.FindStringSubmatch(string(ctx.Path()))
+      matches = reUserVisits.FindStringSubmatch(path)
       if len(matches) > 0 {
         v := ctx.URI().QueryArgs()
         actionGetUserVisits(ctx, parseID(matches[1]), v)
         return
       }
-      matches = reLocationAvg.FindStringSubmatch(string(ctx.Path()))
+      matches = reLocationAvg.FindStringSubmatch(path)
       if len(matches) > 0 {
         v := ctx.URI().QueryArgs()
         actionGetLocationAvg(ctx, parseID(matches[1]), v)
@@ -69,7 +76,7 @@ func route(ctx *fasthttp.RequestCtx) {
     case "POST":
       body := ctx.PostBody()
       // update
-      matches = reLocation.FindStringSubmatch(string(ctx.Path()))
+      matches = reLocation.FindStringSubmatch(path)
       if len(matches) > 0 {
         l := Location{
           ID: 919191919,
@@ -86,7 +93,7 @@ func route(ctx *fasthttp.RequestCtx) {
         actionUpdateLocation(ctx, parseID(matches[1]), l)
         return
       }
-      matches = reUser.FindStringSubmatch(string(ctx.Path()))
+      matches = reUser.FindStringSubmatch(path)
       if len(matches) > 0 {
         u := User{
           ID: 919191919,
@@ -104,7 +111,7 @@ func route(ctx *fasthttp.RequestCtx) {
         actionUpdateUser(ctx, parseID(matches[1]), u)
         return
       }
-      matches = reVisit.FindStringSubmatch(string(ctx.Path()))
+      matches = reVisit.FindStringSubmatch(path)
       if len(matches) > 0 {
         v := Visit{
           ID: 919191919,
@@ -122,7 +129,7 @@ func route(ctx *fasthttp.RequestCtx) {
         return
       }
       // new
-      if reNewLocation.MatchString(string(ctx.Path())) {
+      if reNewLocation.MatchString(path) {
         // TODO Add defaults
         l := Location{}
         err := json.Unmarshal(body, &l)
@@ -133,7 +140,7 @@ func route(ctx *fasthttp.RequestCtx) {
         actionNewLocation(ctx, l)
         return
       }
-      if reNewUser.MatchString(string(ctx.Path())) {
+      if reNewUser.MatchString(path) {
         // TODO Add defaults
         u := User{}
         err := json.Unmarshal(body, &u)
@@ -144,7 +151,7 @@ func route(ctx *fasthttp.RequestCtx) {
         actionNewUser(ctx, u)
         return
       }
-      if reNewVisit.MatchString(string(ctx.Path())) {
+      if reNewVisit.MatchString(path) {
         // TODO Add defaults
         v := Visit{}
         err := json.Unmarshal(body, &v)
@@ -284,6 +291,10 @@ func responseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
     responseStatus(ctx, 400)
     return
   }
+  responseBytes(ctx, body)
+}
+
+func responseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
   ctx.SetBody(body)
   ctx.SetConnectionClose()
