@@ -21,3 +21,7 @@ func main() {
     log.Fatal(err)
   }
 }
+
+// TODO Use redis
+// TODO Save data async, return nil error after validation
+// TODO Return 200 for POST and 400 for GET after 100ms anyway
