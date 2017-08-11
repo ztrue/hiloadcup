@@ -2,10 +2,10 @@ package main
 
 import (
   "errors"
-  "net/url"
   "sort"
   "strconv"
   "sync"
+  "github.com/valyala/fasthttp"
 )
 
 var ml = &sync.Mutex{}
@@ -187,16 +187,16 @@ func (v VisitsByDate) Less(i, j int) bool {
   return v[i].VisitedAt < v[j].VisitedAt
 }
 
-func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
+func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   userVisits := VisitsByDate{}
   if GetUser(userID).ID == 0 {
     return userVisits, ErrNotFound
   }
   var err error
-  fromDateStr, fromDateOK := v["fromDate"]
   fromDate := 0
-  if fromDateOK {
-    fromDate, err = strconv.Atoi(fromDateStr[0])
+  if v.Has("fromDate") {
+    fromDateStr := string(v.Peek("fromDate"))
+    fromDate, err = strconv.Atoi(fromDateStr)
     if err != nil {
       return userVisits, ErrBadParams
     }
@@ -204,10 +204,10 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
     //   return userVisits, ErrBadParams
     // }
   }
-  toDateStr, toDateOK := v["toDate"]
   toDate := 0
-  if toDateOK {
-    toDate, err = strconv.Atoi(toDateStr[0])
+  if v.Has("toDate") {
+    toDateStr := string(v.Peek("toDate"))
+    toDate, err = strconv.Atoi(toDateStr)
     if err != nil {
       return userVisits, ErrBadParams
     }
@@ -215,16 +215,17 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
     //   return userVisits, ErrBadParams
     // }
   }
-  country, countryOK := v["country"]
-  if countryOK {
-    if err := ValidateLength(country[0], 50); err != nil {
+  country := ""
+  if v.Has("country") {
+    country = string(v.Peek("country"))
+    if err := ValidateLength(country, 50); err != nil {
       return userVisits, ErrBadParams
     }
   }
-  toDistanceStr, toDistanceOK := v["toDistance"]
   toDistance := uint32(0)
-  if toDistanceOK {
-    toDistance64, err := strconv.ParseUint(toDistanceStr[0], 10, 32)
+  if v.Has("toDistance") {
+    toDistanceStr := string(v.Peek("fromDate"))
+    toDistance64, err := strconv.ParseUint(toDistanceStr, 10, 32)
     if err != nil {
       return userVisits, ErrBadParams
     }
@@ -232,20 +233,20 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
   }
   for _, v := range visits {
     if v.User == userID {
-      if fromDateOK && v.VisitedAt <= fromDate {
+      if fromDate != 0 && v.VisitedAt <= fromDate {
         continue
       }
-      if toDateOK && v.VisitedAt >= toDate {
+      if toDate != 0 && v.VisitedAt >= toDate {
         continue
       }
       l := GetLocation(v.Location)
       if l.ID == 0 {
         continue
       }
-      if toDistanceOK && l.Distance >= toDistance {
+      if toDistance != 0 && l.Distance >= toDistance {
         continue
       }
-      if countryOK && l.Country != country[0] {
+      if country != "" && l.Country != country {
         continue
       }
       uv := UserVisit{
@@ -260,16 +261,14 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
   return userVisits, nil
 }
 
-func GetLocationAvg(id uint32, v url.Values) (float32, error) {
+func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
   if GetLocation(id).ID == 0 {
     return 0, ErrNotFound
   }
   var err error
-  // fromDateStr, fromDateOK := v["fromDate"]
-  fromDateStr := v.Get("fromDate")
   fromDate := 0
-  // if fromDateOK {
-  if fromDateStr != "" {
+  if v.Has("fromDate") {
+    fromDateStr := string(v.Peek("fromDate"))
     fromDate, err = strconv.Atoi(fromDateStr)
     if err != nil {
       return 0, ErrBadParams
@@ -278,11 +277,9 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     //   return 0, ErrBadParams
     // }
   }
-  // toDateStr, toDateOK := v["toDate"]
-  toDateStr := v.Get("toDate")
   toDate := 0
-  // if toDateOK {
-  if toDateStr != "" {
+  if v.Has("toDate") {
+    toDateStr := string(v.Peek("toDate"))
     toDate, err = strconv.Atoi(toDateStr)
     if err != nil {
       return 0, ErrBadParams
@@ -291,11 +288,9 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     //   return 0, ErrBadParams
     // }
   }
-  // fromAgeStr, fromAgeOK := v["fromAge"]
-  fromAgeStr := v.Get("fromAge")
   fromAge := 0
-  // if fromAgeOK {
-  if fromAgeStr != "" {
+  if v.Has("fromAge") {
+    fromAgeStr := string(v.Peek("fromAge"))
     fromAge, err = strconv.Atoi(fromAgeStr)
     if err != nil {
       return 0, ErrBadParams
@@ -304,11 +299,9 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     //   return 0, ErrBadParams
     // }
   }
-  // toAgeStr, toAgeOK := v["toAge"]
-  toAgeStr := v.Get("toAge")
   toAge := 0
-  // if toAgeOK {
-  if toAgeStr != "" {
+  if v.Has("toAge") {
+    toAgeStr := string(v.Peek("toAge"))
     toAge, err = strconv.Atoi(toAgeStr)
     if err != nil {
       return 0, ErrBadParams
@@ -317,10 +310,9 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     //   return 0, ErrBadParams
     // }
   }
-  // gender, genderOK := v["gender"]
-  gender := v.Get("gender")
-  // if genderOK {
-  if gender != "" {
+  gender := ""
+  if v.Has("gender") {
+    gender = string(v.Peek("gender"))
     if err := ValidateGender(gender); err != nil {
       return 0, ErrBadParams
     }
@@ -329,10 +321,10 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
   sum := 0
   for _, v := range visits {
     if v.Location == id {
-      if fromDateStr != "" && v.VisitedAt <= fromDate {
+      if fromDate != 0 && v.VisitedAt <= fromDate {
         continue
       }
-      if toDateStr != "" && v.VisitedAt >= toDate {
+      if toDate != 0 && v.VisitedAt >= toDate {
         continue
       }
       u := GetUser(v.User)
@@ -342,10 +334,10 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
       if gender != "" && u.Gender != gender {
         continue
       }
-      if fromAgeStr != "" && u.Age() <= fromAge {
+      if fromAge != 0 && u.Age() <= fromAge {
         continue
       }
-      if toAgeStr != "" && u.Age() >= toAge {
+      if toAge != 0 && u.Age() >= toAge {
         continue
       }
       count++
