@@ -190,7 +190,7 @@ type UserVisitsResponse struct {
 func actionGetUserVisits(w http.ResponseWriter, r *http.Request, userID uint32, v url.Values) {
   visits, err := GetUserVisits(userID, v)
   if err != nil {
-    responseStatus(w, http.StatusNotFound)
+    responseError(w, err)
     return
   }
   responseJSON(w, UserVisitsResponse{visits})
@@ -203,7 +203,7 @@ type LocationAvgResponse struct {
 func actionGetLocationAvg(w http.ResponseWriter, r *http.Request, id uint32, v url.Values) {
   avg, err := GetLocationAvg(id, v)
   if err != nil {
-    responseStatus(w, http.StatusNotFound)
+    responseError(w, err)
     return
   }
   responseJSON(w, LocationAvgResponse{avg})
@@ -264,9 +264,11 @@ func responseStatus(w http.ResponseWriter, status int) {
 }
 
 func responseError(w http.ResponseWriter, err error) {
-  status := http.StatusBadRequest
+  status := http.StatusInternalServerError
   if err == ErrNotFound {
     status = http.StatusNotFound
+  } else if err == ErrBadParams {
+    status = http.StatusBadRequest
   }
   responseStatus(w, status)
 }
