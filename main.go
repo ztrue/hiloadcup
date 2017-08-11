@@ -16,7 +16,6 @@ func main() {
   if err := Import(archivePath, dataPath); err != nil {
     log.Fatal(err)
   }
-  Prepare()
   if err := Serve(httpAddr); err != nil {
     log.Fatal(err)
   }

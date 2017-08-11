@@ -4,18 +4,16 @@ import (
   "encoding/json"
   "io/ioutil"
   "log"
-  "path/filepath"
-  "time"
 )
 
 func Import(src, dst string) error {
-  List(filepath.Dir(src))
+  // List(filepath.Dir(src))
   files, err := Unzip(src, dst)
   if err != nil {
     return err
   }
-  List(dst)
-  log.Println(files)
+  // List(dst)
+  // log.Println(files)
   for _, filename := range files {
     // go func(filename string) {
       if err := Parse(filename); err != nil {
@@ -23,7 +21,7 @@ func Import(src, dst string) error {
       }
     // }(filename)
   }
-  time.Sleep(3 * time.Second)
+  // time.Sleep(3 * time.Second)
   // log.Println(GetUsers())
   return nil
 }

@@ -7,6 +7,7 @@ import (
   "net/url"
   "regexp"
   "strconv"
+  "time"
 )
 
 var reLocation *regexp.Regexp
@@ -30,12 +31,28 @@ func Prepare() {
 }
 
 func Serve(addr string) error {
+  Prepare()
+  log.Println("Server started")
   return http.ListenAndServe(addr, Handler{})
 }
 
 type Handler struct {}
 
 func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+  ready := make(chan bool)
+  go func() {
+    route(w, r)
+    ready <- true
+  }()
+  select {
+    case <- ready:
+      // ok
+    case <- time.After(100 * time.Millisecond):
+      responseStatus(w, http.StatusBadRequest)
+  }
+}
+
+func route(w http.ResponseWriter, r *http.Request) {
   matches := []string{}
 
   switch r.Method {
@@ -73,8 +90,13 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       if len(matches) > 0 {
         decoder := json.NewDecoder(r.Body)
         defer r.Body.Close()
-        // TODO Add defaults
-        l := Location{}
+        l := Location{
+          ID: 919191919,
+          Place: "919191919",
+          Country: "919191919",
+          City: "919191919",
+          Distance: 919191919,
+        }
         err := decoder.Decode(&l)
         if err != nil {
           responseStatus(w, http.StatusBadRequest)
@@ -87,8 +109,14 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       if len(matches) > 0 {
         decoder := json.NewDecoder(r.Body)
         defer r.Body.Close()
-        // TODO Add defaults
-        u := User{}
+        u := User{
+          ID: 919191919,
+          Email: "919191919",
+          FirstName: "919191919",
+          LastName: "919191919",
+          Gender: "919191919",
+          BirthDate: 919191919,
+        }
         err := decoder.Decode(&u)
         if err != nil {
           responseStatus(w, http.StatusBadRequest)
@@ -101,8 +129,13 @@ func (Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
       if len(matches) > 0 {
         decoder := json.NewDecoder(r.Body)
         defer r.Body.Close()
-        // TODO Add defaults
-        v := Visit{}
+        v := Visit{
+          ID: 919191919,
+          Location: 919191919,
+          User: 919191919,
+          VisitedAt: 919191919,
+          Mark: 919191919,
+        }
         err := decoder.Decode(&v)
         if err != nil {
           responseStatus(w, http.StatusBadRequest)
