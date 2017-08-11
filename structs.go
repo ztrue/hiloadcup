@@ -2,6 +2,7 @@ package main
 
 import (
   "errors"
+  "time"
 )
 
 var ErrInvalid = errors.New("invalid")
@@ -42,6 +43,11 @@ func (u User) Validate() error {
     return ErrInvalid
   }
   return nil
+}
+
+func (u User) Age() int {
+  bd := time.Unix(int64(u.BirthDate), 0)
+  return Age(bd)
 }
 
 type Visit struct {

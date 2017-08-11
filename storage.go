@@ -16,9 +16,9 @@ var users = map[uint32]User{}
 var visits = map[uint32]Visit{}
 
 func AddLocation(l Location) error {
-  if err := l.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := l.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   _, ok := locations[l.ID]
   if ok {
     return ErrBadParams
@@ -28,9 +28,9 @@ func AddLocation(l Location) error {
 }
 
 func AddUser(u User) error {
-  if err := u.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := u.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   _, ok := users[u.ID]
   if ok {
     return ErrBadParams
@@ -40,9 +40,9 @@ func AddUser(u User) error {
 }
 
 func AddVisit(v Visit) error {
-  if err := v.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := v.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   _, ok := visits[v.ID]
   if ok {
     return ErrBadParams
@@ -52,9 +52,9 @@ func AddVisit(v Visit) error {
 }
 
 func UpdateLocation(id uint32, ul Location) error {
-  if err := ul.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := ul.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   _, ok := locations[ul.ID]
   if !ok {
     return ErrNotFound
@@ -64,9 +64,9 @@ func UpdateLocation(id uint32, ul Location) error {
 }
 
 func UpdateUser(id uint32, uu User) error {
-  if err := uu.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := uu.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   _, ok := users[uu.ID]
   if !ok {
     return ErrNotFound
@@ -76,9 +76,9 @@ func UpdateUser(id uint32, uu User) error {
 }
 
 func UpdateVisit(id uint32, uv Visit) error {
-  if err := uv.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := uv.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   _, ok := visits[uv.ID]
   if !ok {
     return ErrNotFound
@@ -193,22 +193,22 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
       return 0, ErrBadParams
     }
   }
-  // fromAgeStr, fromAgeOK := v["fromAge"]
-  // fromAge := 0
-  // if fromAgeOK {
-  //   fromAge, err = strconv.Atoi(fromAgeStr[0])
-  //   if err != nil {
-  //     return 0, ErrBadParams
-  //   }
-  // }
-  // toAgeStr, toDateOK := v["toAge"]
-  // toAge := 0
-  // if toAgeOK {
-  //   toAge, err = strconv.Atoi(toAgeStr[0])
-  //   if err != nil {
-  //     return 0, ErrBadParams
-  //   }
-  // }
+  fromAgeStr, fromAgeOK := v["fromAge"]
+  fromAge := 0
+  if fromAgeOK {
+    fromAge, err = strconv.Atoi(fromAgeStr[0])
+    if err != nil {
+      return 0, ErrBadParams
+    }
+  }
+  toAgeStr, toAgeOK := v["toAge"]
+  toAge := 0
+  if toAgeOK {
+    toAge, err = strconv.Atoi(toAgeStr[0])
+    if err != nil {
+      return 0, ErrBadParams
+    }
+  }
   gender, genderOK := v["gender"]
   count := 0
   sum := 0
@@ -227,12 +227,12 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
       if genderOK && u.Gender != gender[0] {
         continue
       }
-      // if fromAgeOK && u.BirthDate <= fromAge {
-      //   continue
-      // }
-      // if toAgeOK && u.BirthDate >= toAge {
-      //   continue
-      // }
+      if fromAgeOK && u.Age() <= fromAge {
+        continue
+      }
+      if toAgeOK && u.Age() >= toAge {
+        continue
+      }
       count++
       sum += v.Mark
     }
