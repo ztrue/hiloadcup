@@ -7,6 +7,45 @@ import (
 
 var ErrInvalid = errors.New("invalid")
 
+func ValidateAge(age int) error {
+  return ValidateRange(age, 18, 87)
+}
+
+func ValidateBirthDate(ts int) error {
+  // 1930-01-01 ... 1999-01-01
+  return ValidateRange(ts, -1262304000, 915148800)
+}
+
+func ValidateGender(g string) error {
+  if g != "m" && g != "f" {
+    return ErrInvalid
+  }
+  return nil
+}
+
+func ValidateMark(mark int) error {
+  return ValidateRange(mark, 0, 5)
+}
+
+func ValidateVisitedAt(ts int) error {
+  // 2000-01-01 ... 2015-01-01
+  return ValidateRange(ts, 946684800, 1420070400)
+}
+
+func ValidateLength(str string, l int) error {
+  if len(str) > l {
+    return ErrInvalid
+  }
+  return nil
+}
+
+func ValidateRange(val, from, to int) error {
+  if val < from || val > to {
+    return ErrInvalid
+  }
+  return nil
+}
+
 type Location struct {
   ID uint32 `json:"id"`
   Place string `json:"place"`
@@ -16,8 +55,11 @@ type Location struct {
 }
 
 func (l Location) Validate() error {
-  if len(l.Country) > 50 || len(l.City) > 50 {
-    return ErrInvalid
+  if err := ValidateLength(l.Country, 50); err != nil {
+    return err
+  }
+  if err := ValidateLength(l.City, 50); err != nil {
+    return err
   }
   return nil
 }
@@ -32,15 +74,20 @@ type User struct {
 }
 
 func (u User) Validate() error {
-  if len(u.Email) > 100 || len(u.FirstName) > 50 || len(u.LastName) > 50 {
-    return ErrInvalid
+  if err := ValidateLength(u.Email, 100); err != nil {
+    return err
   }
-  if u.Gender != "m" && u.Gender != "f" {
-    return ErrInvalid
+  if err := ValidateLength(u.FirstName, 50); err != nil {
+    return err
   }
-  // 1930-01-01 ... 1999-01-01
-  if u.BirthDate < -1262304000 || u.BirthDate > 915148800 {
-    return ErrInvalid
+  if err := ValidateLength(u.LastName, 50); err != nil {
+    return err
+  }
+  if err := ValidateGender(u.Gender); err != nil {
+    return err
+  }
+  if err := ValidateBirthDate(u.BirthDate); err != nil {
+    return err
   }
   return nil
 }
@@ -59,12 +106,11 @@ type Visit struct {
 }
 
 func (v Visit) Validate() error {
-  if v.Mark < 0 || v.Mark > 5 {
-    return ErrInvalid
+  if err := ValidateMark(v.Mark); err != nil {
+    return err
   }
-  // 2000-01-01 ... 2015-01-01
-  if v.VisitedAt < 946684800 || v.VisitedAt > 1420070400 {
-    return ErrInvalid
+  if err := ValidateVisitedAt(v.VisitedAt); err != nil {
+    return err
   }
   return nil
 }

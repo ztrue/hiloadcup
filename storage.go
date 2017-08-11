@@ -123,6 +123,9 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
     if err != nil {
       return userVisits, ErrBadParams
     }
+    if err := ValidateVisitedAt(fromDate); err != nil {
+      return userVisits, ErrBadParams
+    }
   }
   toDateStr, toDateOK := v["toDate"]
   toDate := 0
@@ -131,8 +134,16 @@ func GetUserVisits(userID uint32, v url.Values) ([]UserVisit, error) {
     if err != nil {
       return userVisits, ErrBadParams
     }
+    if err := ValidateVisitedAt(toDate); err != nil {
+      return userVisits, ErrBadParams
+    }
   }
   country, countryOK := v["country"]
+  if countryOK {
+    if err := ValidateLength(country[0], 50); err != nil {
+      return userVisits, ErrBadParams
+    }
+  }
   toDistanceStr, toDistanceOK := v["toDistance"]
   toDistance := uint32(0)
   if toDistanceOK {
@@ -184,12 +195,18 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     if err != nil {
       return 0, ErrBadParams
     }
+    if err := ValidateVisitedAt(fromDate); err != nil {
+      return 0, ErrBadParams
+    }
   }
   toDateStr, toDateOK := v["toDate"]
   toDate := 0
   if toDateOK {
     toDate, err = strconv.Atoi(toDateStr[0])
     if err != nil {
+      return 0, ErrBadParams
+    }
+    if err := ValidateVisitedAt(toDate); err != nil {
       return 0, ErrBadParams
     }
   }
@@ -200,6 +217,9 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     if err != nil {
       return 0, ErrBadParams
     }
+    if err := ValidateAge(fromAge); err != nil {
+      return 0, ErrBadParams
+    }
   }
   toAgeStr, toAgeOK := v["toAge"]
   toAge := 0
@@ -208,8 +228,16 @@ func GetLocationAvg(id uint32, v url.Values) (float32, error) {
     if err != nil {
       return 0, ErrBadParams
     }
+    if err := ValidateAge(toAge); err != nil {
+      return 0, ErrBadParams
+    }
   }
   gender, genderOK := v["gender"]
+  if genderOK {
+    if err := ValidateGender(gender[0]); err != nil {
+      return 0, ErrBadParams
+    }
+  }
   count := 0
   sum := 0
   for _, v := range visits {
