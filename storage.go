@@ -19,9 +19,9 @@ var ErrNotFound = errors.New("not found")
 var ErrBadParams = errors.New("bad params")
 
 // TODO other storage or safe io
-var locations = map[uint32]Location{}
-var users = map[uint32]User{}
-var visits = map[uint32]Visit{}
+var locations = map[uint32]*Location{}
+var users = map[uint32]*User{}
+var visits = map[uint32]*Visit{}
 
 func CacheRecord(entity string, id uint32, record interface{}) {
   data, err := json.Marshal(record)
@@ -33,7 +33,7 @@ func CacheRecord(entity string, id uint32, record interface{}) {
   }
 }
 
-func AddLocation(l Location) error {
+func AddLocation(l *Location) error {
   if err := l.Validate(); err != nil {
     return ErrBadParams
   }
@@ -50,7 +50,7 @@ func AddLocation(l Location) error {
   return nil
 }
 
-func AddUser(u User) error {
+func AddUser(u *User) error {
   if err := u.Validate(); err != nil {
     return ErrBadParams
   }
@@ -67,7 +67,7 @@ func AddUser(u User) error {
   return nil
 }
 
-func AddVisit(v Visit) error {
+func AddVisit(v *Visit) error {
   if err := v.Validate(); err != nil {
     return ErrBadParams
   }
@@ -84,7 +84,7 @@ func AddVisit(v Visit) error {
   return nil
 }
 
-func UpdateLocation(id uint32, ul Location) error {
+func UpdateLocation(id uint32, ul *Location) error {
   if err := ul.Validate(); err != nil {
     return ErrBadParams
   }
@@ -116,7 +116,7 @@ func UpdateLocation(id uint32, ul Location) error {
   return nil
 }
 
-func UpdateUser(id uint32, uu User) error {
+func UpdateUser(id uint32, uu *User) error {
   if err := uu.Validate(); err != nil {
     return ErrBadParams
   }
@@ -151,7 +151,7 @@ func UpdateUser(id uint32, uu User) error {
   return nil
 }
 
-func UpdateVisit(id uint32, uv Visit) error {
+func UpdateVisit(id uint32, uv *Visit) error {
   if err := uv.Validate(); err != nil {
     return ErrBadParams
   }
@@ -183,15 +183,15 @@ func UpdateVisit(id uint32, uv Visit) error {
   return nil
 }
 
-func GetLocation(id uint32) Location {
+func GetLocation(id uint32) *Location {
   return locations[id]
 }
 
-func GetUser(id uint32) User {
+func GetUser(id uint32) *User {
   return users[id]
 }
 
-func GetVisit(id uint32) Visit {
+func GetVisit(id uint32) *Visit {
   return visits[id]
 }
 
@@ -208,7 +208,7 @@ func (v VisitsByDate) Less(i, j int) bool {
 
 func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   userVisits := VisitsByDate{}
-  if GetUser(userID).ID == 0 {
+  if GetUser(userID) == nil {
     return userVisits, ErrNotFound
   }
   var err error
@@ -259,7 +259,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
         continue
       }
       l := GetLocation(v.Location)
-      if l.ID == 0 {
+      if l == nil {
         continue
       }
       if toDistance != 0 && l.Distance >= toDistance {
@@ -281,7 +281,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
 }
 
 func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
-  if GetLocation(id).ID == 0 {
+  if GetLocation(id) == nil {
     return 0, ErrNotFound
   }
   var err error
@@ -347,7 +347,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
         continue
       }
       u := GetUser(v.User)
-      if u.ID == 0 {
+      if u == nil {
         continue
       }
       if gender != "" && u.Gender != gender {

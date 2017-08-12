@@ -122,7 +122,7 @@ type UserVisit struct {
 }
 
 type Payload struct {
-  Locations []Location `json:"locations"`
-  Users []User `json:"users"`
-  Visits []Visit `json:"visits"`
+  Locations []*Location `json:"locations"`
+  Users []*User `json:"users"`
+  Visits []*Visit `json:"visits"`
 }
