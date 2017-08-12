@@ -144,11 +144,6 @@ func route(ctx *fasthttp.RequestCtx) {
         }
         matches = reUser.FindStringSubmatch(path)
         if len(matches) > 0 {
-          id := parseID(matches[1])
-          body := ctx.PostBody()
-          if id == 380 {
-            log.Println(string(body))
-          }
           u := &User{
             ID: 919191919,
             Email: "919191919",
@@ -157,11 +152,12 @@ func route(ctx *fasthttp.RequestCtx) {
             Gender: "919191919",
             BirthDate: 919191919,
           }
-          err := json.Unmarshal(body, u)
+          err := json.Unmarshal(ctx.PostBody(), u)
           if err != nil {
             responseStatus(ctx, 400)
             return
           }
+          id := parseID(matches[1])
           actionUpdateUser(ctx, id, u)
           return
         }

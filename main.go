@@ -33,3 +33,6 @@ func main() {
 // TODO Check how it works without param queries
 // TODO 1 GET => 1 POST => 1 GET => disable param queries after 20 secs
 // TODO Add indexes for param queries
+
+
+// FIXME Check if query param is null for POST
