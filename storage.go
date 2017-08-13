@@ -91,30 +91,32 @@ func UpdateLocation(id uint32, e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
-  ml.Lock()
-  se, ok := locations[id]
-  ml.Unlock()
+  list := locations
+  m := ml
+
+  m.Lock()
+  se, ok := list[id]
   if !ok {
+    m.Unlock()
     return ErrNotFound
   }
-  if e.ID == nil {
-    e.ID = se.ID
+  if e.ID != nil {
+    se.ID = e.ID
   }
-  if e.Place == nil {
-    e.Place = se.Place
+  if e.Place != nil {
+    se.Place = e.Place
   }
-  if e.Country == nil {
-    e.Country = se.Country
+  if e.Country != nil {
+    se.Country = e.Country
   }
-  if e.City == nil {
-    e.City = se.City
+  if e.City != nil {
+    se.City = e.City
   }
-  if e.Distance == nil {
-    e.Distance = se.Distance
+  if e.Distance != nil {
+    se.Distance = e.Distance
   }
-  ml.Lock()
-  locations[id] = e
-  ml.Unlock()
+  m.Unlock()
+
   CacheRecord("locations", id, e)
   return nil
 }
@@ -123,33 +125,35 @@ func UpdateUser(id uint32, e *User) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
-  mu.Lock()
-  se, ok := users[id]
-  mu.Unlock()
+  list := users
+  m := mu
+
+  m.Lock()
+  se, ok := list[id]
   if !ok {
+    m.Unlock()
     return ErrNotFound
   }
-  if e.ID == nil {
-    e.ID = se.ID
+  if e.ID != nil {
+    se.ID = e.ID
   }
-  if e.Email == nil {
-    e.Email = se.Email
+  if e.Email != nil {
+    se.Email = e.Email
   }
-  if e.FirstName == nil {
-    e.FirstName = se.FirstName
+  if e.FirstName != nil {
+    se.FirstName = e.FirstName
   }
-  if e.LastName == nil {
-    e.LastName = se.LastName
+  if e.LastName != nil {
+    se.LastName = e.LastName
   }
-  if e.Gender == nil {
-    e.Gender = se.Gender
+  if e.Gender != nil {
+    se.Gender = e.Gender
   }
-  if e.BirthDate == nil {
-    e.BirthDate = se.BirthDate
+  if e.BirthDate != nil {
+    se.BirthDate = e.BirthDate
   }
-  mu.Lock()
-  users[id] = e
-  mu.Unlock()
+  m.Unlock()
+
   CacheRecord("users", id, e)
   return nil
 }
@@ -158,30 +162,32 @@ func UpdateVisit(id uint32, e *Visit) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
-  mv.Lock()
-  se, ok := visits[id]
-  mv.Unlock()
+  list := visits
+  m := mv
+
+  m.Lock()
+  se, ok := list[id]
   if !ok {
+    m.Unlock()
     return ErrNotFound
   }
-  if e.ID == nil {
-    e.ID = se.ID
+  if e.ID != nil {
+    se.ID = e.ID
   }
-  if e.Location == nil {
-    e.Location = se.Location
+  if e.Location != nil {
+    se.Location = e.Location
   }
-  if e.User == nil {
-    e.User = se.User
+  if e.User != nil {
+    se.User = e.User
   }
-  if e.VisitedAt == nil {
-    e.VisitedAt = se.VisitedAt
+  if e.VisitedAt != nil {
+    se.VisitedAt= e.VisitedAt
   }
-  if e.Mark == nil {
-    e.Mark = se.Mark
+  if e.Mark != nil {
+    se.Mark = e.Mark
   }
-  mv.Lock()
-  visits[id] = e
-  mv.Unlock()
+  m.Unlock()
+
   CacheRecord("visits", id, e)
   return nil
 }

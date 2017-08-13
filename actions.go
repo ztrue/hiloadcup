@@ -3,6 +3,7 @@ package main
 import (
   "encoding/json"
   "errors"
+  "log"
   "github.com/valyala/fasthttp"
 )
 
@@ -66,7 +67,7 @@ type DummyResponse struct {}
 
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
   var e *Location
-  if err := checkRequest(ctx, e); err != nil {
+  if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
@@ -79,7 +80,7 @@ func ActionNewLocation(ctx *fasthttp.RequestCtx) {
 
 func ActionNewUser(ctx *fasthttp.RequestCtx) {
   var e *User
-  if err := checkRequest(ctx, e); err != nil {
+  if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
@@ -92,7 +93,7 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
 
 func ActionNewVisit(ctx *fasthttp.RequestCtx) {
   var e *Visit
-  if err := checkRequest(ctx, e); err != nil {
+  if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
@@ -105,7 +106,7 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
 
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
   var e *Location
-  if err := checkRequest(ctx, e); err != nil {
+  if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
@@ -118,7 +119,7 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
 
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
   var e *User
-  if err := checkRequest(ctx, e); err != nil {
+  if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
@@ -131,11 +132,13 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
 
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
   var e *Visit
-  if err := checkRequest(ctx, e); err != nil {
+  if err := checkRequest(ctx, &e); err != nil {
+    log.Println(id, err)
     ResponseStatus(ctx, 400)
     return
   }
   if err := UpdateVisit(id, e); err != nil {
+    log.Println(id, err)
     ResponseError(ctx, err)
     return
   }

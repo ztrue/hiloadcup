@@ -17,7 +17,7 @@ func ValidateBirthDate(ts *int) error {
 }
 
 func ValidateGender(g *string) error {
-  if *g != "m" && *g != "f" {
+  if g == nil || *g != "m" && *g != "f" {
     return ErrInvalid
   }
   return nil
@@ -33,14 +33,14 @@ func ValidateVisitedAt(ts *int) error {
 }
 
 func ValidateLength(str *string, l int) error {
-  if len(*str) > l {
+  if str == nil || len(*str) > l {
     return ErrInvalid
   }
   return nil
 }
 
 func ValidateRange(val *int, from, to int) error {
-  if *val < from || *val > to {
+  if val == nil || *val < from || *val > to {
     return ErrInvalid
   }
   return nil
@@ -54,12 +54,19 @@ type Location struct {
   Distance *uint32 `json:"distance"`
 }
 
-func (l Location) Validate() error {
-  if err := ValidateLength(l.Country, 50); err != nil {
-    return err
+func (l *Location) Validate() error {
+  if l == nil {
+    return ErrInvalid
   }
-  if err := ValidateLength(l.City, 50); err != nil {
-    return err
+  if l.Country != nil {
+    if err := ValidateLength(l.Country, 50); err != nil {
+      return err
+    }
+  }
+  if l.City != nil {
+    if  err := ValidateLength(l.City, 50); err != nil {
+      return err
+    }
   }
   return nil
 }
@@ -73,26 +80,42 @@ type User struct {
   BirthDate *int `json:"birth_date"`
 }
 
-func (u User) Validate() error {
-  if err := ValidateLength(u.Email, 100); err != nil {
-    return err
+func (u *User) Validate() error {
+  if u == nil {
+    return ErrInvalid
   }
-  if err := ValidateLength(u.FirstName, 50); err != nil {
-    return err
+  if u.Email != nil {
+    if err := ValidateLength(u.Email, 100); err != nil {
+      return err
+    }
   }
-  if err := ValidateLength(u.LastName, 50); err != nil {
-    return err
+  if u.FirstName != nil {
+    if err := ValidateLength(u.FirstName, 50); err != nil {
+      return err
+    }
   }
-  if err := ValidateGender(u.Gender); err != nil {
-    return err
+  if u.LastName != nil {
+    if err := ValidateLength(u.LastName, 50); err != nil {
+      return err
+    }
   }
-  // if err := ValidateBirthDate(u.BirthDate); err != nil {
-  //   return err
+  if u.Gender != nil {
+    if err := ValidateGender(u.Gender); err != nil {
+      return err
+    }
+  }
+  // if u.BirthDate != nil {
+  //   if err := ValidateBirthDate(u.BirthDate); err != nil {
+  //     return err
+  //   }
   // }
   return nil
 }
 
-func (u User) Age() int {
+func (u *User) Age() int {
+  if u == nil {
+    return 0
+  }
   bd := time.Unix(int64(*(u.BirthDate)), 0)
   return Age(bd)
 }
@@ -105,12 +128,19 @@ type Visit struct {
   Mark *int `json:"mark"`
 }
 
-func (v Visit) Validate() error {
-  if err := ValidateMark(v.Mark); err != nil {
-    return err
+func (v *Visit) Validate() error {
+  if v == nil {
+    return ErrInvalid
   }
-  // if err := ValidateVisitedAt(v.VisitedAt); err != nil {
-  //   return err
+  if v.Mark != nil {
+    if err := ValidateMark(v.Mark); err != nil {
+      return err
+    }
+  }
+  // if v.VisitedAt != nil {
+  //   if err := ValidateVisitedAt(v.VisitedAt); err != nil {
+  //     return err
+  //   }
   // }
   return nil
 }
