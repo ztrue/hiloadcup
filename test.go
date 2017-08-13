@@ -8,62 +8,9 @@ package main
 // var db *memdb.MemDB
 //
 // type User struct {
-//   ID string `json:"id"`
-//   Email *string `json:"email"`
-// }
-//
-// type Person struct {
-//     Email string
-//     Name  string
-//     Age   int
-// }
-// func test() {// Create a sample struct
-//   // Create the DB schema
-//   schema := &memdb.DBSchema{
-//       Tables: map[string]*memdb.TableSchema{
-//           "person": &memdb.TableSchema{
-//               Name: "person",
-//               Indexes: map[string]*memdb.IndexSchema{
-//                   "id": &memdb.IndexSchema{
-//                       Name:    "id",
-//                       Unique:  true,
-//                       Indexer: &memdb.StringFieldIndex{Field: "Email"},
-//                   },
-//               },
-//           },
-//       },
-//   }
-//
-//   // Create a new data base
-//   db, err := memdb.NewMemDB(schema)
-//   if err != nil {
-//       log.Fatal(err)
-//   }
-//
-//   // Create a write transaction
-//   txn := db.Txn(true)
-//
-//   // Insert a new person
-//   p := &Person{"joe@aol.com", "Joe", 30}
-//   if err := txn.Insert("person", p); err != nil {
-//       log.Fatal(err)
-//   }
-//
-//   // Commit the transaction
-//   txn.Commit()
-//
-//   // Create read-only transaction
-//   txn = db.Txn(false)
-//   defer txn.Abort()
-//
-//   // Lookup by email
-//   raw, err := txn.First("person", "id", "joe@aol.com")
-//   if err != nil {
-//       log.Fatal(err)
-//   }
-//
-//   // Say hi!
-//   log.Println("Hello %s!", raw.(*Person).Name)
+//   ID string
+//   FK string
+//   Email *string
 // }
 //
 // func main() {
@@ -76,15 +23,17 @@ package main
 //     log.Fatal(err)
 //   }
 //   id := "300"
+//   fk := "400"
 //   email := "foo@bar"
 //   e := &User{
 //     ID: id,
+//     FK: fk,
 //     Email: &email,
 //   }
 //   if err := AddUser(e); err != nil {
 //     log.Fatal(err)
 //   }
-//   se := GetUser(id)
+//   se := GetUser(fk)
 //   log.Println(se)
 // }
 //
@@ -99,18 +48,18 @@ package main
 //   return nil
 // }
 //
-// func GetUser(id string) *User {
+// func GetUser(fk string) *User {
 //   entityType := "users"
 //   t := db.Txn(false)
 //   defer t.Abort()
-//   ei, err := t.First(entityType, "id", id)
+//   ei, err := t.First(entityType, "fk", fk)
 //   if err != nil {
-//     log.Println(id, err)
+//     log.Println(fk, err)
 //     return nil
 //   }
 //   e, ok := ei.(*User)
 //   if !ok {
-//     log.Println(id, ei)
+//     log.Println(fk, ei)
 //     return nil
 //   }
 //   return e
@@ -126,6 +75,11 @@ package main
 //             Name: "id",
 //             Unique: true,
 //             Indexer: &memdb.StringFieldIndex{Field: "ID"},
+//           },
+//           "fk": &memdb.IndexSchema{
+//             Name: "fk",
+//             Unique: false,
+//             Indexer: &memdb.StringFieldIndex{Field: "FK"},
 //           },
 //         },
 //       },

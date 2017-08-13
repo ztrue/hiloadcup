@@ -132,9 +132,9 @@ func AddLocation(e *Location) error {
   id := *(e.ID)
   e.PK = idToStr(id)
 
-  go CacheRecord(entityType, e.PK, e)
+  CacheRecord(entityType, e.PK, e)
 
-  go func(entityType string, e *Location) {
+  // go func(entityType string, e *Location) {
     t := db.Txn(true)
     if err := t.Insert(entityType, e); err != nil {
       t.Abort()
@@ -142,7 +142,7 @@ func AddLocation(e *Location) error {
       return
     }
     t.Commit()
-  }(entityType, e)
+  // }(entityType, e)
 
   return nil
 }
@@ -155,9 +155,9 @@ func AddUser(e *User) error {
   id := *(e.ID)
   e.PK = idToStr(id)
 
-  go CacheRecord(entityType, e.PK, e)
+  CacheRecord(entityType, e.PK, e)
 
-  go func(entityType string, e *User) {
+  // go func(entityType string, e *User) {
     t := db.Txn(true)
     if err := t.Insert(entityType, e); err != nil {
       t.Abort()
@@ -165,7 +165,7 @@ func AddUser(e *User) error {
       return
     }
     t.Commit()
-  }(entityType, e)
+  // }(entityType, e)
 
   return nil
 }
@@ -180,9 +180,9 @@ func AddVisit(e *Visit) error {
   e.FKLocation = idToStr(*(e.Location))
   e.FKUser = idToStr(*(e.User))
 
-  go CacheRecord(entityType, e.PK, e)
+  CacheRecord(entityType, e.PK, e)
 
-  go func(entityType string, e *Visit) {
+  // go func(entityType string, e *Visit) {
     t := db.Txn(true)
     if err := t.Insert(entityType, e); err != nil {
       t.Abort()
@@ -190,7 +190,7 @@ func AddVisit(e *Visit) error {
       return
     }
     t.Commit()
-  }(entityType, e)
+  // }(entityType, e)
 
   return nil
 }
@@ -200,7 +200,7 @@ func UpdateLocation(id uint32, e *Location) error {
     return ErrBadParams
   }
 
-  go func(id uint32, e *Location) {
+  // go func(id uint32, e *Location) {
     entityType := "locations"
 
     t := db.Txn(true)
@@ -240,7 +240,7 @@ func UpdateLocation(id uint32, e *Location) error {
       se.Distance = e.Distance
     }
 
-    go CacheRecord(entityType, se.PK, se)
+    CacheRecord(entityType, se.PK, se)
 
     if err := t.Insert(entityType, se); err != nil {
       t.Abort()
@@ -248,7 +248,7 @@ func UpdateLocation(id uint32, e *Location) error {
       return
     }
     t.Commit()
-  }(id, e)
+  // }(id, e)
 
   return nil
 }
@@ -258,7 +258,7 @@ func UpdateUser(id uint32, e *User) error {
     return ErrBadParams
   }
 
-  go func(id uint32, e *User) {
+  // go func(id uint32, e *User) {
     entityType := "users"
 
     t := db.Txn(true)
@@ -301,7 +301,7 @@ func UpdateUser(id uint32, e *User) error {
       se.BirthDate = e.BirthDate
     }
 
-    go CacheRecord(entityType, se.PK, se)
+    CacheRecord(entityType, se.PK, se)
 
     if err := t.Insert(entityType, se); err != nil {
       t.Abort()
@@ -309,7 +309,7 @@ func UpdateUser(id uint32, e *User) error {
       return
     }
     t.Commit()
-  }(id, e)
+  // }(id, e)
 
   return nil
 }
@@ -319,7 +319,7 @@ func UpdateVisit(id uint32, e *Visit) error {
     return ErrBadParams
   }
 
-  go func(id uint32, e *Visit) {
+  // go func(id uint32, e *Visit) {
     entityType := "visits"
 
     t := db.Txn(true)
@@ -361,7 +361,7 @@ func UpdateVisit(id uint32, e *Visit) error {
       se.Mark = e.Mark
     }
 
-    go CacheRecord(entityType, se.PK, se)
+    CacheRecord(entityType, se.PK, se)
 
     if err := t.Insert(entityType, se); err != nil {
       t.Abort()
@@ -369,7 +369,7 @@ func UpdateVisit(id uint32, e *Visit) error {
       return
     }
     t.Commit()
-  }(id, e)
+  // }(id, e)
 
   return nil
 }
