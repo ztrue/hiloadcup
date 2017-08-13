@@ -500,13 +500,13 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     toDistance = uint32(toDistance64)
   }
   t := db.Txn(false)
-  // TODO Run ASAP
-  defer t.Abort()
   iter, err := t.Get("visits", "userID", idToStr(userID))
   if err != nil {
+    t.Abort()
     log.Println(userID, err)
     return userVisits, err
   }
+  t.Abort()
   for {
     vi := iter.Next()
     if vi == nil {
@@ -595,13 +595,13 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     }
   }
   t := db.Txn(false)
-  // TODO Run ASAP
-  defer t.Abort()
   iter, err := t.Get("visits", "locationID", idToStr(id))
   if err != nil {
+    t.Abort()
     log.Println(id, err)
     return 0, err
   }
+  t.Abort()
   count := 0
   sum := 0
   for {
@@ -628,7 +628,6 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     if hasGender && *(u.Gender) != gender {
       continue
     }
-    // TODO check < fromAge
     if hasFromAge && u.Age() < fromAge {
       continue
     }
