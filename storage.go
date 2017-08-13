@@ -133,7 +133,7 @@ func UpdateLocation(id uint32, e *Location) error {
   entityType := "locations"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", id)
+  sei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     t.Abort()
     return err
@@ -183,7 +183,7 @@ func UpdateUser(id uint32, e *User) error {
   entityType := "users"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", id)
+  sei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     t.Abort()
     return err
@@ -236,7 +236,7 @@ func UpdateVisit(id uint32, e *Visit) error {
   entityType := "visits"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", id)
+  sei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     t.Abort()
     return err
@@ -283,9 +283,10 @@ func GetLocation(id uint32) *Location {
   entityType := "locations"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", id)
+  ei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     log.Println(id, err)
+    return nil
   }
   e, ok := ei.(*Location)
   if !ok {
@@ -299,9 +300,10 @@ func GetUser(id uint32) *User {
   entityType := "users"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", id)
+  ei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     log.Println(id, err)
+    return nil
   }
   e, ok := ei.(*User)
   if !ok {
@@ -315,9 +317,10 @@ func GetVisit(id uint32) *Visit {
   entityType := "visits"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", id)
+  ei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     log.Println(id, err)
+    return nil
   }
   e, ok := ei.(*Visit)
   if !ok {
@@ -383,7 +386,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   t := db.Txn(false)
   // TODO Run ASAP
   defer t.Abort()
-  iter, err := t.Get("visits", "userID", userID)
+  iter, err := t.Get("visits", "userID", strconv.FormatUint(uint64(userID), 10))
   if err != nil {
     log.Println(userID, err)
     return userVisits, err
@@ -478,7 +481,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
   t := db.Txn(false)
   // TODO Run ASAP
   defer t.Abort()
-  iter, err := t.Get("visits", "locationID", id)
+  iter, err := t.Get("visits", "locationID", strconv.FormatUint(uint64(id), 10))
   if err != nil {
     log.Println(id, err)
     return 0, err
@@ -495,30 +498,29 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
       log.Println(id, v)
       return 0, ErrInternal
     }
-    if *(v.Location) == id {
-      if hasFromDate && *(v.VisitedAt) <= fromDate {
-        continue
-      }
-      if hasToDate && *(v.VisitedAt) >= toDate {
-        continue
-      }
-      u := GetUser(*(v.User))
-      if u == nil {
-        log.Println(id, *v.User, "user not found")
-        continue
-      }
-      if hasGender && *(u.Gender) != gender {
-        continue
-      }
-      if hasFromAge && u.Age() <= fromAge {
-        continue
-      }
-      if hasToAge && u.Age() >= toAge {
-        continue
-      }
-      count++
-      sum += *(v.Mark)
+    if hasFromDate && *(v.VisitedAt) <= fromDate {
+      continue
     }
+    if hasToDate && *(v.VisitedAt) >= toDate {
+      continue
+    }
+    u := GetUser(*(v.User))
+    if u == nil {
+      log.Println(id, *v.User, "user not found")
+      continue
+    }
+    if hasGender && *(u.Gender) != gender {
+      continue
+    }
+    // TODO check < fromAge
+    if hasFromAge && u.Age() <= fromAge {
+      continue
+    }
+    if hasToAge && u.Age() >= toAge {
+      continue
+    }
+    count++
+    sum += *(v.Mark)
   }
   if count == 0 {
     return 0, nil
