@@ -133,12 +133,10 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
   var e *Visit
   if err := checkRequest(ctx, &e); err != nil {
-    log.Println(id, err)
     ResponseStatus(ctx, 400)
     return
   }
   if err := UpdateVisit(id, e); err != nil {
-    log.Println(id, err)
     ResponseError(ctx, err)
     return
   }
