@@ -26,7 +26,7 @@ func PrepareDB() error {
           "id": &memdb.IndexSchema{
             Name: "id",
             Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "ID"},
+            Indexer: &memdb.StringFieldIndex{Field: "PK"},
           },
         },
       },
@@ -36,7 +36,7 @@ func PrepareDB() error {
           "id": &memdb.IndexSchema{
             Name: "id",
             Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "ID"},
+            Indexer: &memdb.StringFieldIndex{Field: "PK"},
           },
         },
       },
@@ -46,17 +46,17 @@ func PrepareDB() error {
           "id": &memdb.IndexSchema{
             Name: "id",
             Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "ID"},
+            Indexer: &memdb.StringFieldIndex{Field: "PK"},
           },
           "userID": &memdb.IndexSchema{
             Name: "userID",
             Unique: false,
-            Indexer: &memdb.StringFieldIndex{Field: "User"},
+            Indexer: &memdb.StringFieldIndex{Field: "FKUser"},
           },
           "locationID": &memdb.IndexSchema{
             Name: "locationID",
             Unique: false,
-            Indexer: &memdb.StringFieldIndex{Field: "Location"},
+            Indexer: &memdb.StringFieldIndex{Field: "FKLocation"},
           },
         },
       },
@@ -84,6 +84,7 @@ func AddLocation(e *Location) error {
   }
   entityType := "locations"
   id := *(e.ID)
+  e.PK = idToStr(id)
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
@@ -100,6 +101,7 @@ func AddUser(e *User) error {
   }
   entityType := "users"
   id := *(e.ID)
+  e.PK = idToStr(id)
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
@@ -116,6 +118,7 @@ func AddVisit(e *Visit) error {
   }
   entityType := "visits"
   id := *(e.ID)
+  e.PK = idToStr(id)
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
@@ -133,7 +136,7 @@ func UpdateLocation(id uint32, e *Location) error {
   entityType := "locations"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
+  sei, err := t.First(entityType, "id", idToStr(id))
   if err != nil {
     t.Abort()
     return err
@@ -145,12 +148,13 @@ func UpdateLocation(id uint32, e *Location) error {
 
   se, ok := sei.(*Location)
   if !ok {
-    log.Println(id)
+    log.Println(id, sei)
     t.Abort()
     return ErrInternal
   }
 
   if e.ID != nil {
+    se.PK = idToStr(*(e.ID))
     se.ID = e.ID
   }
   if e.Place != nil {
@@ -183,7 +187,7 @@ func UpdateUser(id uint32, e *User) error {
   entityType := "users"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
+  sei, err := t.First(entityType, "id", idToStr(id))
   if err != nil {
     t.Abort()
     return err
@@ -195,12 +199,13 @@ func UpdateUser(id uint32, e *User) error {
 
   se, ok := sei.(*User)
   if !ok {
-    log.Println(id)
+    log.Println(id, sei)
     t.Abort()
     return ErrInternal
   }
 
   if e.ID != nil {
+    se.PK = idToStr(*(e.ID))
     se.ID = e.ID
   }
   if e.Email != nil {
@@ -236,7 +241,7 @@ func UpdateVisit(id uint32, e *Visit) error {
   entityType := "visits"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
+  sei, err := t.First(entityType, "id", idToStr(id))
   if err != nil {
     t.Abort()
     return err
@@ -248,18 +253,21 @@ func UpdateVisit(id uint32, e *Visit) error {
 
   se, ok := sei.(*Visit)
   if !ok {
-    log.Println(id)
+    log.Println(id, sei)
     t.Abort()
     return ErrInternal
   }
 
   if e.ID != nil {
+    se.PK = idToStr(*(e.ID))
     se.ID = e.ID
   }
   if e.Location != nil {
+    se.FKLocation = idToStr(*(e.Location))
     se.Location = e.Location
   }
   if e.User != nil {
+    se.FKUser = idToStr(*(e.User))
     se.User = e.User
   }
   if e.VisitedAt != nil {
@@ -283,14 +291,14 @@ func GetLocation(id uint32) *Location {
   entityType := "locations"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
+  ei, err := t.First(entityType, "id", idToStr(id))
   if err != nil {
     log.Println(id, err)
     return nil
   }
   e, ok := ei.(*Location)
   if !ok {
-    log.Println(id)
+    log.Println(id, ei)
     return nil
   }
   return e
@@ -300,14 +308,14 @@ func GetUser(id uint32) *User {
   entityType := "users"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
+  ei, err := t.First(entityType, "id", idToStr(id))
   if err != nil {
     log.Println(id, err)
     return nil
   }
   e, ok := ei.(*User)
   if !ok {
-    log.Println(id)
+    log.Println(id, ei)
     return nil
   }
   return e
@@ -317,14 +325,14 @@ func GetVisit(id uint32) *Visit {
   entityType := "visits"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", strconv.FormatUint(uint64(id), 10))
+  ei, err := t.First(entityType, "id", idToStr(id))
   if err != nil {
     log.Println(id, err)
     return nil
   }
   e, ok := ei.(*Visit)
   if !ok {
-    log.Println(id)
+    log.Println(id, ei)
     return nil
   }
   return e
@@ -386,7 +394,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   t := db.Txn(false)
   // TODO Run ASAP
   defer t.Abort()
-  iter, err := t.Get("visits", "userID", strconv.FormatUint(uint64(userID), 10))
+  iter, err := t.Get("visits", "userID", idToStr(userID))
   if err != nil {
     log.Println(userID, err)
     return userVisits, err
@@ -398,7 +406,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     }
     v, ok := vi.(*Visit)
     if !ok {
-      log.Println(userID, v)
+      log.Println(userID, vi)
       return userVisits, ErrInternal
     }
     if hasFromDate && *(v.VisitedAt) <= fromDate {
@@ -481,7 +489,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
   t := db.Txn(false)
   // TODO Run ASAP
   defer t.Abort()
-  iter, err := t.Get("visits", "locationID", strconv.FormatUint(uint64(id), 10))
+  iter, err := t.Get("visits", "locationID", idToStr(id))
   if err != nil {
     log.Println(id, err)
     return 0, err
@@ -495,7 +503,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     }
     v, ok := vi.(*Visit)
     if !ok {
-      log.Println(id, v)
+      log.Println(id, vi)
       return 0, ErrInternal
     }
     if hasFromDate && *(v.VisitedAt) <= fromDate {
@@ -506,7 +514,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     }
     u := GetUser(*(v.User))
     if u == nil {
-      log.Println(id, *v.User, "user not found")
+      log.Println(id, *(v.User), "user not found")
       continue
     }
     if hasGender && *(u.Gender) != gender {
@@ -527,4 +535,8 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
   }
   avg := Round(float64(sum) / float64(count), .5, 5)
   return float32(avg), nil
+}
+
+func idToStr(id uint32) string {
+  return strconv.FormatUint(uint64(id), 10)
 }

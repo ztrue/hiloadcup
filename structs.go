@@ -47,6 +47,7 @@ func ValidateRange(val *int, from, to int) error {
 }
 
 type Location struct {
+  PK string `json:"-"`
   ID *uint32 `json:"id"`
   Place *string `json:"place"`
   Country *string `json:"country"`
@@ -72,6 +73,7 @@ func (l *Location) Validate() error {
 }
 
 type User struct {
+  PK string `json:"-"`
   ID *uint32 `json:"id"`
   Email *string `json:"email"`
   FirstName *string `json:"first_name"`
@@ -121,6 +123,9 @@ func (u *User) Age() int {
 }
 
 type Visit struct {
+  PK string `json:"-"`
+  FKUser string `json:"-"`
+  FKLocation string `json:"-"`
   ID *uint32 `json:"id"`
   Location *uint32 `json:"location"`
   User *uint32 `json:"user"`
