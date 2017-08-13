@@ -29,7 +29,7 @@ func CacheRecord(entityType string, id uint32, e interface{}) {
     log.Println(err)
   } else {
     key := fmt.Sprintf("/%s/%d", entityType, id)
-    CacheSet(key, data)
+    CacheSet(key, &data)
   }
 }
 

@@ -156,12 +156,12 @@ func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
     ResponseStatus(ctx, 400)
     return
   }
-  ResponseBytes(ctx, body)
+  ResponseBytes(ctx, &body)
 }
 
-func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
+func ResponseBytes(ctx *fasthttp.RequestCtx, body *[]byte) {
   ctx.SetStatusCode(200)
-  ctx.SetBody(body)
+  ctx.SetBody(*body)
   ctx.SetConnectionClose()
 }
 
