@@ -9,33 +9,6 @@ import (
 var ErrNilParam = errors.New("nil param")
 var ErrEmptyEntity = errors.New("empty entity")
 
-// func ActionGetLocation(ctx *fasthttp.RequestCtx, id uint32) {
-//   l := GetLocation(id)
-//   if l == nil {
-//     ResponseStatus(ctx, 404)
-//     return
-//   }
-//   ResponseJSON(ctx, l)
-// }
-//
-// func ActionGetUser(ctx *fasthttp.RequestCtx, id uint32) {
-//   u := GetUser(id)
-//   if u == nil {
-//     ResponseStatus(ctx, 404)
-//     return
-//   }
-//   ResponseJSON(ctx, u)
-// }
-//
-// func ActionGetVisit(ctx *fasthttp.RequestCtx, id uint32) {
-//   v := GetVisit(id)
-//   if v == nil {
-//     ResponseStatus(ctx, 404)
-//     return
-//   }
-//   ResponseJSON(ctx, v)
-// }
-
 type UserVisitsResponse struct {
   Visits []UserVisit `json:"visits"`
 }

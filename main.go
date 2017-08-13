@@ -13,6 +13,9 @@ var httpAddr = ":80"
 
 func main() {
   log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile | log.LUTC)
+  if err := PrepareDB(); err != nil {
+    log.Fatal(err)
+  }
   if err := Import(archivePath, dataPath); err != nil {
     log.Fatal(err)
   }
@@ -34,5 +37,5 @@ func main() {
 // TODO 1 GET => 1 POST => 1 GET => disable param queries after 20 secs
 // TODO Add indexes for param queries
 
-
+// Check intervals on > >=
 // FIXME Check if query param is null for POST

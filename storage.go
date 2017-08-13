@@ -7,21 +7,66 @@ import (
   "log"
   "sort"
   "strconv"
-  "sync"
   "github.com/valyala/fasthttp"
+  "github.com/hashicorp/go-memdb"
 )
 
-var ml = &sync.Mutex{}
-var mu = &sync.Mutex{}
-var mv = &sync.Mutex{}
+var db *memdb.MemDB
 
 var ErrNotFound = errors.New("not found")
 var ErrBadParams = errors.New("bad params")
+var ErrInternal = errors.New("internal")
 
-// TODO other storage or safe io
-var locations = map[uint32]*Location{}
-var users = map[uint32]*User{}
-var visits = map[uint32]*Visit{}
+func PrepareDB() error {
+  schema := &memdb.DBSchema{
+    Tables: map[string]*memdb.TableSchema{
+      "locations": &memdb.TableSchema{
+        Name: "locations",
+        Indexes: map[string]*memdb.IndexSchema{
+          "id": &memdb.IndexSchema{
+            Name: "id",
+            Unique: true,
+            Indexer: &memdb.StringFieldIndex{Field: "ID"},
+          },
+        },
+      },
+      "users": &memdb.TableSchema{
+        Name: "users",
+        Indexes: map[string]*memdb.IndexSchema{
+          "id": &memdb.IndexSchema{
+            Name: "id",
+            Unique: true,
+            Indexer: &memdb.StringFieldIndex{Field: "ID"},
+          },
+        },
+      },
+      "visits": &memdb.TableSchema{
+        Name: "visits",
+        Indexes: map[string]*memdb.IndexSchema{
+          "id": &memdb.IndexSchema{
+            Name: "id",
+            Unique: true,
+            Indexer: &memdb.StringFieldIndex{Field: "ID"},
+          },
+          "userID": &memdb.IndexSchema{
+            Name: "userID",
+            Unique: false,
+            Indexer: &memdb.StringFieldIndex{Field: "User"},
+          },
+          "locationID": &memdb.IndexSchema{
+            Name: "locationID",
+            Unique: false,
+            Indexer: &memdb.StringFieldIndex{Field: "Location"},
+          },
+        },
+      },
+    },
+  }
+
+  var err error
+  db, err = memdb.NewMemDB(schema)
+  return err
+}
 
 func CacheRecord(entityType string, id uint32, e interface{}) {
   data, err := json.Marshal(e)
@@ -37,17 +82,15 @@ func AddLocation(e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  entityType := "locations"
   id := *(e.ID)
-  ml.Lock()
-  _, ok := locations[id]
-  ml.Unlock()
-  if ok {
-    return ErrBadParams
+  t := db.Txn(true)
+  if err := t.Insert(entityType, e); err != nil {
+    t.Abort()
+    return err
   }
-  ml.Lock()
-  locations[id] = e
-  ml.Unlock()
-  CacheRecord("locations", id, e)
+  t.Commit()
+  CacheRecord(entityType, id, e)
   return nil
 }
 
@@ -55,17 +98,15 @@ func AddUser(e *User) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  entityType := "users"
   id := *(e.ID)
-  mu.Lock()
-  _, ok := users[id]
-  mu.Unlock()
-  if ok {
-    return ErrBadParams
+  t := db.Txn(true)
+  if err := t.Insert(entityType, e); err != nil {
+    t.Abort()
+    return err
   }
-  mu.Lock()
-  users[id] = e
-  mu.Unlock()
-  CacheRecord("users", id, e)
+  t.Commit()
+  CacheRecord(entityType, id, e)
   return nil
 }
 
@@ -73,17 +114,15 @@ func AddVisit(e *Visit) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  entityType := "visits"
   id := *(e.ID)
-  mv.Lock()
-  _, ok := visits[id]
-  mv.Unlock()
-  if ok {
-    return ErrBadParams
+  t := db.Txn(true)
+  if err := t.Insert(entityType, e); err != nil {
+    t.Abort()
+    return err
   }
-  mv.Lock()
-  visits[id] = e
-  mv.Unlock()
-  CacheRecord("visits", id, e)
+  t.Commit()
+  CacheRecord(entityType, id, e)
   return nil
 }
 
@@ -91,15 +130,26 @@ func UpdateLocation(id uint32, e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
-  list := locations
-  m := ml
+  entityType := "locations"
 
-  m.Lock()
-  se, ok := list[id]
-  if !ok {
-    m.Unlock()
+  t := db.Txn(true)
+  sei, err := t.First(entityType, "id", id)
+  if err != nil {
+    t.Abort()
+    return err
+  }
+  if sei == nil {
+    t.Abort()
     return ErrNotFound
   }
+
+  se, ok := sei.(*Location)
+  if !ok {
+    log.Println(id)
+    t.Abort()
+    return ErrInternal
+  }
+
   if e.ID != nil {
     se.ID = e.ID
   }
@@ -115,9 +165,14 @@ func UpdateLocation(id uint32, e *Location) error {
   if e.Distance != nil {
     se.Distance = e.Distance
   }
-  m.Unlock()
 
-  CacheRecord("locations", id, se)
+  if err := t.Insert(entityType, se); err != nil {
+    t.Abort()
+    return err
+  }
+  t.Commit()
+
+  CacheRecord(entityType, id, se)
   return nil
 }
 
@@ -125,15 +180,26 @@ func UpdateUser(id uint32, e *User) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
-  list := users
-  m := mu
+  entityType := "users"
 
-  m.Lock()
-  se, ok := list[id]
-  if !ok {
-    m.Unlock()
+  t := db.Txn(true)
+  sei, err := t.First(entityType, "id", id)
+  if err != nil {
+    t.Abort()
+    return err
+  }
+  if sei == nil {
+    t.Abort()
     return ErrNotFound
   }
+
+  se, ok := sei.(*User)
+  if !ok {
+    log.Println(id)
+    t.Abort()
+    return ErrInternal
+  }
+
   if e.ID != nil {
     se.ID = e.ID
   }
@@ -152,9 +218,14 @@ func UpdateUser(id uint32, e *User) error {
   if e.BirthDate != nil {
     se.BirthDate = e.BirthDate
   }
-  m.Unlock()
 
-  CacheRecord("users", id, se)
+  if err := t.Insert(entityType, se); err != nil {
+    t.Abort()
+    return err
+  }
+  t.Commit()
+
+  CacheRecord(entityType, id, se)
   return nil
 }
 
@@ -162,15 +233,26 @@ func UpdateVisit(id uint32, e *Visit) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
-  list := visits
-  m := mv
+  entityType := "visits"
 
-  m.Lock()
-  se, ok := list[id]
-  if !ok {
-    m.Unlock()
+  t := db.Txn(true)
+  sei, err := t.First(entityType, "id", id)
+  if err != nil {
+    t.Abort()
+    return err
+  }
+  if sei == nil {
+    t.Abort()
     return ErrNotFound
   }
+
+  se, ok := sei.(*Visit)
+  if !ok {
+    log.Println(id)
+    t.Abort()
+    return ErrInternal
+  }
+
   if e.ID != nil {
     se.ID = e.ID
   }
@@ -186,22 +268,63 @@ func UpdateVisit(id uint32, e *Visit) error {
   if e.Mark != nil {
     se.Mark = e.Mark
   }
-  m.Unlock()
 
-  CacheRecord("visits", id, se)
+  if err := t.Insert(entityType, se); err != nil {
+    t.Abort()
+    return err
+  }
+  t.Commit()
+
+  CacheRecord(entityType, id, se)
   return nil
 }
 
 func GetLocation(id uint32) *Location {
-  return locations[id]
+  entityType := "locations"
+  t := db.Txn(false)
+  defer t.Abort()
+  ei, err := t.First(entityType, "id", id)
+  if err != nil {
+    log.Println(id, err)
+  }
+  e, ok := ei.(*Location)
+  if !ok {
+    log.Println(id)
+    return nil
+  }
+  return e
 }
 
 func GetUser(id uint32) *User {
-  return users[id]
+  entityType := "users"
+  t := db.Txn(false)
+  defer t.Abort()
+  ei, err := t.First(entityType, "id", id)
+  if err != nil {
+    log.Println(id, err)
+  }
+  e, ok := ei.(*User)
+  if !ok {
+    log.Println(id)
+    return nil
+  }
+  return e
 }
 
 func GetVisit(id uint32) *Visit {
-  return visits[id]
+  entityType := "visits"
+  t := db.Txn(false)
+  defer t.Abort()
+  ei, err := t.First(entityType, "id", id)
+  if err != nil {
+    log.Println(id, err)
+  }
+  e, ok := ei.(*Visit)
+  if !ok {
+    log.Println(id)
+    return nil
+  }
+  return e
 }
 
 type VisitsByDate []UserVisit
@@ -222,36 +345,34 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   }
   var err error
   fromDate := 0
-  if v.Has("fromDate") {
+  hasFromDate := v.Has("fromDate")
+  if hasFromDate {
     fromDateStr := string(v.Peek("fromDate"))
     fromDate, err = strconv.Atoi(fromDateStr)
     if err != nil {
       return userVisits, ErrBadParams
     }
-    // if err := ValidateVisitedAt(fromDate); err != nil {
-    //   return userVisits, ErrBadParams
-    // }
   }
   toDate := 0
-  if v.Has("toDate") {
+  hasToDate := v.Has("toDate")
+  if hasToDate {
     toDateStr := string(v.Peek("toDate"))
     toDate, err = strconv.Atoi(toDateStr)
     if err != nil {
       return userVisits, ErrBadParams
     }
-    // if err := ValidateVisitedAt(toDate); err != nil {
-    //   return userVisits, ErrBadParams
-    // }
   }
   country := ""
-  if v.Has("country") {
+  hasCountry := v.Has("country")
+  if hasCountry {
     country = string(v.Peek("country"))
     if err := ValidateLength(&country, 50); err != nil {
       return userVisits, ErrBadParams
     }
   }
   toDistance := uint32(0)
-  if v.Has("toDistance") {
+  hasToDistance := v.Has("toDistance")
+  if hasToDistance {
     toDistanceStr := string(v.Peek("toDistance"))
     toDistance64, err := strconv.ParseUint(toDistanceStr, 10, 32)
     if err != nil {
@@ -259,32 +380,47 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     }
     toDistance = uint32(toDistance64)
   }
-  for _, v := range visits {
-    if *(v.User) == userID {
-      if fromDate != 0 && *(v.VisitedAt) <= fromDate {
-        continue
-      }
-      if toDate != 0 && *(v.VisitedAt) >= toDate {
-        continue
-      }
-      l := GetLocation(*(v.Location))
-      if l == nil {
-        log.Println(userID, *v.Location, "location not found")
-        continue
-      }
-      if toDistance != 0 && *(l.Distance) >= toDistance {
-        continue
-      }
-      if country != "" && *(l.Country) != country {
-        continue
-      }
-      uv := UserVisit{
-        Mark: v.Mark,
-        VisitedAt: v.VisitedAt,
-        Place: l.Place,
-      }
-      userVisits = append(userVisits, uv)
+  t := db.Txn(false)
+  // TODO Run ASAP
+  defer t.Abort()
+  iter, err := t.Get("visits", "userID", userID)
+  if err != nil {
+    log.Println(userID, err)
+    return userVisits, err
+  }
+  for {
+    vi := iter.Next()
+    if vi == nil {
+      break
     }
+    v, ok := vi.(*Visit)
+    if !ok {
+      log.Println(userID, v)
+      return userVisits, ErrInternal
+    }
+    if hasFromDate && *(v.VisitedAt) <= fromDate {
+      continue
+    }
+    if hasToDate && *(v.VisitedAt) >= toDate {
+      continue
+    }
+    l := GetLocation(*(v.Location))
+    if l == nil {
+      log.Println(userID, *v.Location, "location not found")
+      continue
+    }
+    if hasToDistance && *(l.Distance) >= toDistance {
+      continue
+    }
+    if hasCountry && *(l.Country) != country {
+      continue
+    }
+    uv := UserVisit{
+      Mark: v.Mark,
+      VisitedAt: v.VisitedAt,
+      Place: l.Place,
+    }
+    userVisits = append(userVisits, uv)
   }
   sort.Sort(userVisits)
   return userVisits, nil
@@ -296,64 +432,74 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
   }
   var err error
   fromDate := 0
-  if v.Has("fromDate") {
+  hasFromDate := v.Has("fromDate")
+  if hasFromDate {
     fromDateStr := string(v.Peek("fromDate"))
     fromDate, err = strconv.Atoi(fromDateStr)
     if err != nil {
       return 0, ErrBadParams
     }
-    // if err := ValidateVisitedAt(fromDate); err != nil {
-    //   return 0, ErrBadParams
-    // }
   }
   toDate := 0
-  if v.Has("toDate") {
+  hasToDate := v.Has("toDate")
+  if hasToDate {
     toDateStr := string(v.Peek("toDate"))
     toDate, err = strconv.Atoi(toDateStr)
     if err != nil {
       return 0, ErrBadParams
     }
-    // if err := ValidateVisitedAt(toDate); err != nil {
-    //   return 0, ErrBadParams
-    // }
   }
   fromAge := 0
-  if v.Has("fromAge") {
+  hasFromAge := v.Has("fromAge")
+  if hasFromAge {
     fromAgeStr := string(v.Peek("fromAge"))
     fromAge, err = strconv.Atoi(fromAgeStr)
     if err != nil {
       return 0, ErrBadParams
     }
-    // if err := ValidateAge(fromAge); err != nil {
-    //   return 0, ErrBadParams
-    // }
   }
   toAge := 0
-  if v.Has("toAge") {
+  hasToAge := v.Has("toAge")
+  if hasToAge {
     toAgeStr := string(v.Peek("toAge"))
     toAge, err = strconv.Atoi(toAgeStr)
     if err != nil {
       return 0, ErrBadParams
     }
-    // if err := ValidateAge(toAge); err != nil {
-    //   return 0, ErrBadParams
-    // }
   }
   gender := ""
-  if v.Has("gender") {
+  hasGender := v.Has("gender")
+  if hasGender {
     gender = string(v.Peek("gender"))
     if err := ValidateGender(&gender); err != nil {
       return 0, ErrBadParams
     }
   }
+  t := db.Txn(false)
+  // TODO Run ASAP
+  defer t.Abort()
+  iter, err := t.Get("visits", "locationID", id)
+  if err != nil {
+    log.Println(id, err)
+    return 0, err
+  }
   count := 0
   sum := 0
-  for _, v := range visits {
+  for {
+    vi := iter.Next()
+    if vi == nil {
+      break
+    }
+    v, ok := vi.(*Visit)
+    if !ok {
+      log.Println(id, v)
+      return 0, ErrInternal
+    }
     if *(v.Location) == id {
-      if fromDate != 0 && *(v.VisitedAt) <= fromDate {
+      if hasFromDate && *(v.VisitedAt) <= fromDate {
         continue
       }
-      if toDate != 0 && *(v.VisitedAt) >= toDate {
+      if hasToDate && *(v.VisitedAt) >= toDate {
         continue
       }
       u := GetUser(*(v.User))
@@ -361,13 +507,13 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
         log.Println(id, *v.User, "user not found")
         continue
       }
-      if gender != "" && *(u.Gender) != gender {
+      if hasGender && *(u.Gender) != gender {
         continue
       }
-      if fromAge != 0 && u.Age() <= fromAge {
+      if hasFromAge && u.Age() <= fromAge {
         continue
       }
-      if toAge != 0 && u.Age() >= toAge {
+      if hasToAge && u.Age() >= toAge {
         continue
       }
       count++

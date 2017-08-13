@@ -8,8 +8,6 @@ import (
   "github.com/valyala/fasthttp"
 )
 
-var stage = 0
-
 var reLocation *regexp.Regexp
 var reUser *regexp.Regexp
 var reVisit *regexp.Regexp
@@ -36,43 +34,14 @@ func route(ctx *fasthttp.RequestCtx) {
 
   switch string(ctx.Method()) {
     case "GET":
-      if stage == 0 {
-        stage = 1
-      } else if stage == 2 {
-        stage = 3
-        // go func() {
-        //   time.Sleep(25 * time.Second)
-        //   stage = 4
-        // }()
-      }
-
       cached, ok := CacheGet(path)
       if ok {
         ResponseBytes(ctx, cached)
         return
       }
 
-      // matches = reLocation.FindStringSubmatch(path)
-      // if len(matches) > 0 {
-      //   ActionGetLocation(ctx, parseID(matches[1]))
-      //   return
-      // }
-      // matches = reUser.FindStringSubmatch(path)
-      // if len(matches) > 0 {
-      //   ActionGetUser(ctx, parseID(matches[1]))
-      //   return
-      // }
-      // matches = reVisit.FindStringSubmatch(path)
-      // if len(matches) > 0 {
-      //   ActionGetVisit(ctx, parseID(matches[1]))
-      //   return
-      // }
       matches = reUserVisits.FindStringSubmatch(path)
       if len(matches) > 0 {
-        // if stage == 3 {
-        //   ResponseStatus(ctx, 400)
-        //   return
-        // }
         id := parseID(matches[1])
         v := ctx.URI().QueryArgs()
         ActionGetUserVisits(ctx, id, v)
@@ -80,19 +49,12 @@ func route(ctx *fasthttp.RequestCtx) {
       }
       matches = reLocationAvg.FindStringSubmatch(path)
       if len(matches) > 0 {
-        // if stage == 3 {
-        //   ResponseStatus(ctx, 400)
-        //   return
-        // }
         id := parseID(matches[1])
         v := ctx.URI().QueryArgs()
         ActionGetLocationAvg(ctx, id, v)
         return
       }
     case "POST":
-      if stage == 1 {
-        stage = 2
-      }
       // new
       if path == "/locations/new" {
         ActionNewLocation(ctx)
