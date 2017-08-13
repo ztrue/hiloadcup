@@ -33,14 +33,27 @@ package main
 //   if err := AddUser(e); err != nil {
 //     log.Fatal(err)
 //   }
-//   se := GetUser(fk)
+//   se := GetUser(id)
 //   log.Println(se)
+//   log.Println(GetUserFK(fk))
+//
+//   fk2 := "500"
+//   e2 := &User{
+//     ID: id,
+//     FK: fk2,
+//     Email: &email,
+//   }
+//   if err := UpdateUser(id, e2); err != nil {
+//     log.Fatal(err)
+//   }
+//   log.Println(GetUser(id))
+//   log.Println(GetUserFK(fk))
+//   log.Println(GetUserFK(fk2))
 // }
 //
 // func AddUser(e *User) error {
-//   entityType := "users"
 //   t := db.Txn(true)
-//   if err := t.Insert(entityType, e); err != nil {
+//   if err := t.Insert("users", e); err != nil {
 //     t.Abort()
 //     return err
 //   }
@@ -48,7 +61,53 @@ package main
 //   return nil
 // }
 //
-// func GetUser(fk string) *User {
+// func UpdateUser(id string, e *User) error {
+//   t := db.Txn(true)
+//
+//   sei, err := t.First("users", "id", id)
+//   if err != nil {
+//     t.Abort()
+//     log.Println(id, err)
+//     return err
+//   }
+//   if sei == nil {
+//     t.Abort()
+//     log.Println(id)
+//     return nil
+//   }
+//   _, ok := sei.(*User)
+//   if !ok {
+//     t.Abort()
+//     log.Println(id, sei)
+//     return nil
+//   }
+//
+//   if err := t.Insert("users", e); err != nil {
+//     t.Abort()
+//     return err
+//   }
+//   t.Commit()
+//   return nil
+// }
+//
+// func GetUser(id string) *User {
+//   entityType := "users"
+//   t := db.Txn(false)
+//   defer t.Abort()
+//   ei, err := t.First(entityType, "id", id)
+//   if err != nil {
+//     log.Println(id, err)
+//     return nil
+//   }
+//   e, ok := ei.(*User)
+//   if !ok {
+//     log.Println(id, ei)
+//     return nil
+//   }
+//   return e
+// }
+//
+// func GetUserFK(fk string) *User {
 //   entityType := "users"
 //   t := db.Txn(false)
 //   defer t.Abort()
