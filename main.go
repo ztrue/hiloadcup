@@ -27,18 +27,9 @@ func main() {
   }
 }
 
-// TODO Fix 200 != 400 on POST (both new and update)
-// TODO Use redis
-// TODO Save data async, return nil error after validation
-// TODO Return 200 for POST and 400 for GET after 100ms anyway
-// TODO Cache plain JSON for each GET /<entity>/<id>
 // TODO flusher, ok := w.(http.Flusher); flusher.Flush()
 // TODO sync.Pool
-// TODO Pointers
 // TODO Avoid conversion between []byte and string
-// TODO Check how it works without param queries
-// TODO 1 GET => 1 POST => 1 GET => disable param queries after 20 secs
 // TODO Add indexes for param queries
-
-// Check intervals on > >=
-// FIXME Check if query param is null for POST
+// TODO Easier age check
+// TODO Check why there is a first long request
