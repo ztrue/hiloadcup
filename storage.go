@@ -3,7 +3,6 @@ package main
 import (
   "encoding/json"
   "errors"
-  "fmt"
   "log"
   "sort"
   "strconv"
@@ -68,12 +67,12 @@ func PrepareDB() error {
   return err
 }
 
-func CacheRecord(entityType string, id uint32, e interface{}) {
+func CacheRecord(entityType, pk string, e interface{}) {
   data, err := json.Marshal(e)
   if err != nil {
     log.Println(err)
   } else {
-    key := fmt.Sprintf("/%s/%d", entityType, id)
+    key := "/" + entityType + "/" + pk
     CacheSet(key, &data)
   }
 }
@@ -85,13 +84,15 @@ func AddLocation(e *Location) error {
   entityType := "locations"
   id := *(e.ID)
   e.PK = idToStr(id)
+
+  go CacheRecord(entityType, e.PK, e)
+
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
     return err
   }
   t.Commit()
-  CacheRecord(entityType, id, e)
   return nil
 }
 
@@ -102,13 +103,15 @@ func AddUser(e *User) error {
   entityType := "users"
   id := *(e.ID)
   e.PK = idToStr(id)
+
+  go CacheRecord(entityType, e.PK, e)
+
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
     return err
   }
   t.Commit()
-  CacheRecord(entityType, id, e)
   return nil
 }
 
@@ -119,13 +122,17 @@ func AddVisit(e *Visit) error {
   entityType := "visits"
   id := *(e.ID)
   e.PK = idToStr(id)
+  e.FKLocation = idToStr(*(e.Location))
+  e.FKUser = idToStr(*(e.User))
+
+  go CacheRecord(entityType, e.PK, e)
+
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
     return err
   }
   t.Commit()
-  CacheRecord(entityType, id, e)
   return nil
 }
 
@@ -170,13 +177,13 @@ func UpdateLocation(id uint32, e *Location) error {
     se.Distance = e.Distance
   }
 
+  go CacheRecord(entityType, se.PK, se)
+
   if err := t.Insert(entityType, se); err != nil {
     t.Abort()
     return err
   }
   t.Commit()
-
-  CacheRecord(entityType, id, se)
   return nil
 }
 
@@ -224,13 +231,13 @@ func UpdateUser(id uint32, e *User) error {
     se.BirthDate = e.BirthDate
   }
 
+  go CacheRecord(entityType, se.PK, se)
+
   if err := t.Insert(entityType, se); err != nil {
     t.Abort()
     return err
   }
   t.Commit()
-
-  CacheRecord(entityType, id, se)
   return nil
 }
 
@@ -277,17 +284,17 @@ func UpdateVisit(id uint32, e *Visit) error {
     se.Mark = e.Mark
   }
 
+  go CacheRecord(entityType, se.PK, se)
+
   if err := t.Insert(entityType, se); err != nil {
     t.Abort()
     return err
   }
   t.Commit()
-
-  CacheRecord(entityType, id, se)
   return nil
 }
 
-func GetLocation(id uint32) *Location {
+func GetLocation(id uint32, must bool) *Location {
   entityType := "locations"
   t := db.Txn(false)
   defer t.Abort()
@@ -298,13 +305,15 @@ func GetLocation(id uint32) *Location {
   }
   e, ok := ei.(*Location)
   if !ok {
-    log.Println(id, ei)
+    if must {
+      log.Println(id, ei)
+    }
     return nil
   }
   return e
 }
 
-func GetUser(id uint32) *User {
+func GetUser(id uint32, must bool) *User {
   entityType := "users"
   t := db.Txn(false)
   defer t.Abort()
@@ -315,13 +324,15 @@ func GetUser(id uint32) *User {
   }
   e, ok := ei.(*User)
   if !ok {
-    log.Println(id, ei)
+    if must {
+      log.Println(id, ei)
+    }
     return nil
   }
   return e
 }
 
-func GetVisit(id uint32) *Visit {
+func GetVisit(id uint32, must bool) *Visit {
   entityType := "visits"
   t := db.Txn(false)
   defer t.Abort()
@@ -332,7 +343,9 @@ func GetVisit(id uint32) *Visit {
   }
   e, ok := ei.(*Visit)
   if !ok {
-    log.Println(id, ei)
+    if must {
+      log.Println(id, ei)
+    }
     return nil
   }
   return e
@@ -351,7 +364,7 @@ func (v VisitsByDate) Less(i, j int) bool {
 
 func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   userVisits := VisitsByDate{}
-  if GetUser(userID) == nil {
+  if GetUser(userID, false) == nil {
     return userVisits, ErrNotFound
   }
   var err error
@@ -415,7 +428,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     if hasToDate && *(v.VisitedAt) >= toDate {
       continue
     }
-    l := GetLocation(*(v.Location))
+    l := GetLocation(*(v.Location), true)
     if l == nil {
       log.Println(userID, *v.Location, "location not found")
       continue
@@ -438,7 +451,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
 }
 
 func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
-  if GetLocation(id) == nil {
+  if GetLocation(id, false) == nil {
     return 0, ErrNotFound
   }
   var err error
@@ -512,7 +525,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     if hasToDate && *(v.VisitedAt) >= toDate {
       continue
     }
-    u := GetUser(*(v.User))
+    u := GetUser(*(v.User), true)
     if u == nil {
       log.Println(id, *(v.User), "user not found")
       continue

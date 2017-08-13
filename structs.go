@@ -7,6 +7,48 @@ import (
 
 var ErrInvalid = errors.New("invalid")
 
+type Location struct {
+  PK string `json:"-"`
+  ID *uint32 `json:"id"`
+  Place *string `json:"place"`
+  Country *string `json:"country"`
+  City *string `json:"city"`
+  Distance *uint32 `json:"distance"`
+}
+
+type User struct {
+  PK string `json:"-"`
+  ID *uint32 `json:"id"`
+  Email *string `json:"email"`
+  FirstName *string `json:"first_name"`
+  LastName *string `json:"last_name"`
+  Gender *string `json:"gender"`
+  BirthDate *int `json:"birth_date"`
+}
+
+type Visit struct {
+  PK string `json:"-"`
+  FKUser string `json:"-"`
+  FKLocation string `json:"-"`
+  ID *uint32 `json:"id"`
+  Location *uint32 `json:"location"`
+  User *uint32 `json:"user"`
+  VisitedAt *int `json:"visited_at"`
+  Mark *int `json:"mark"`
+}
+
+type UserVisit struct {
+  Mark *int `json:"mark"`
+  VisitedAt *int `json:"visited_at"`
+  Place *string `json:"place"`
+}
+
+type Payload struct {
+  Locations []*Location `json:"locations"`
+  Users []*User `json:"users"`
+  Visits []*Visit `json:"visits"`
+}
+
 func ValidateAge(age *int) error {
   return ValidateRange(age, 18, 87)
 }
@@ -46,15 +88,6 @@ func ValidateRange(val *int, from, to int) error {
   return nil
 }
 
-type Location struct {
-  PK string `json:"-"`
-  ID *uint32 `json:"id"`
-  Place *string `json:"place"`
-  Country *string `json:"country"`
-  City *string `json:"city"`
-  Distance *uint32 `json:"distance"`
-}
-
 func (l *Location) Validate() error {
   if l == nil {
     return ErrInvalid
@@ -70,16 +103,6 @@ func (l *Location) Validate() error {
     }
   }
   return nil
-}
-
-type User struct {
-  PK string `json:"-"`
-  ID *uint32 `json:"id"`
-  Email *string `json:"email"`
-  FirstName *string `json:"first_name"`
-  LastName *string `json:"last_name"`
-  Gender *string `json:"gender"`
-  BirthDate *int `json:"birth_date"`
 }
 
 func (u *User) Validate() error {
@@ -122,17 +145,6 @@ func (u *User) Age() int {
   return Age(bd)
 }
 
-type Visit struct {
-  PK string `json:"-"`
-  FKUser string `json:"-"`
-  FKLocation string `json:"-"`
-  ID *uint32 `json:"id"`
-  Location *uint32 `json:"location"`
-  User *uint32 `json:"user"`
-  VisitedAt *int `json:"visited_at"`
-  Mark *int `json:"mark"`
-}
-
 func (v *Visit) Validate() error {
   if v == nil {
     return ErrInvalid
@@ -148,16 +160,4 @@ func (v *Visit) Validate() error {
   //   }
   // }
   return nil
-}
-
-type UserVisit struct {
-  Mark *int `json:"mark"`
-  VisitedAt *int `json:"visited_at"`
-  Place *string `json:"place"`
-}
-
-type Payload struct {
-  Locations []*Location `json:"locations"`
-  Users []*User `json:"users"`
-  Visits []*Visit `json:"visits"`
 }

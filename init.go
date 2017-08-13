@@ -43,21 +43,24 @@ func Parse(filename string) error {
   if err := json.Unmarshal(data, &payload); err != nil {
     return err
   }
-  if err := Save(payload); err != nil {
-    return err
-  }
+  Save(payload)
   return nil
 }
 
-func Save(payload Payload) error {
-  for _, l := range payload.Locations {
-    AddLocation(l)
+func Save(payload Payload) {
+  for _, e := range payload.Locations {
+    if err := AddLocation(e); err != nil {
+      log.Println(err)
+    }
   }
-  for _, u := range payload.Users {
-    AddUser(u)
+  for _, e := range payload.Users {
+    if err := AddUser(e); err != nil {
+      log.Println(err)
+    }
   }
-  for _, v := range payload.Visits {
-    AddVisit(v)
+  for _, e := range payload.Visits {
+    if err := AddVisit(e); err != nil {
+      log.Println(err)
+    }
   }
-  return nil
 }

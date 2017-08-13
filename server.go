@@ -24,7 +24,7 @@ func Prepare() {
 
 func Serve(addr string) error {
   Prepare()
-  log.Println("Server started")
+  log.Println("Server started at " + addr)
   return fasthttp.ListenAndServe(addr, route)
 }
 
