@@ -128,52 +128,65 @@ func AddLocation(e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+
+  AddLocationProcess(e)
+
+  return nil
+}
+
+func AddLocationProcess(e *Location) {
   entityType := "locations"
   id := *(e.ID)
   e.PK = idToStr(id)
 
   CacheRecord(entityType, e.PK, e)
 
-  // go func(entityType string, e *Location) {
-    t := db.Txn(true)
-    if err := t.Insert(entityType, e); err != nil {
-      t.Abort()
-      log.Println(err)
-      return
-    }
-    t.Commit()
-  // }(entityType, e)
-
-  return nil
+  t := db.Txn(true)
+  if err := t.Insert(entityType, e); err != nil {
+    t.Abort()
+    log.Println(err)
+    return
+  }
+  t.Commit()
 }
 
 func AddUser(e *User) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+
+  AddUserProcess(e)
+
+  return nil
+}
+
+func AddUserProcess(e *User) {
   entityType := "users"
   id := *(e.ID)
   e.PK = idToStr(id)
 
   CacheRecord(entityType, e.PK, e)
 
-  // go func(entityType string, e *User) {
-    t := db.Txn(true)
-    if err := t.Insert(entityType, e); err != nil {
-      t.Abort()
-      log.Println(err)
-      return
-    }
-    t.Commit()
-  // }(entityType, e)
-
-  return nil
+  t := db.Txn(true)
+  if err := t.Insert(entityType, e); err != nil {
+    t.Abort()
+    log.Println(err)
+    return
+  }
+  t.Commit()
 }
 
 func AddVisit(e *Visit) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+
+  AddVisitProcess(e)
+
+  return nil
+}
+
+func AddVisitProcess(e *Visit) {
   entityType := "visits"
   id := *(e.ID)
   e.PK = idToStr(id)
@@ -182,17 +195,13 @@ func AddVisit(e *Visit) error {
 
   CacheRecord(entityType, e.PK, e)
 
-  // go func(entityType string, e *Visit) {
-    t := db.Txn(true)
-    if err := t.Insert(entityType, e); err != nil {
-      t.Abort()
-      log.Println(err)
-      return
-    }
-    t.Commit()
-  // }(entityType, e)
-
-  return nil
+  t := db.Txn(true)
+  if err := t.Insert(entityType, e); err != nil {
+    t.Abort()
+    log.Println(err)
+    return
+  }
+  t.Commit()
 }
 
 func UpdateLocation(id uint32, e *Location) error {
@@ -200,57 +209,59 @@ func UpdateLocation(id uint32, e *Location) error {
     return ErrBadParams
   }
 
-  // go func(id uint32, e *Location) {
-    entityType := "locations"
-
-    t := db.Txn(true)
-    sei, err := t.First(entityType, "id", idToStr(id))
-    if err != nil {
-      t.Abort()
-      log.Println(id, err)
-      return
-    }
-    if sei == nil {
-      t.Abort()
-      log.Println(id)
-      return
-    }
-
-    se, ok := sei.(*Location)
-    if !ok {
-      t.Abort()
-      log.Println(id, sei)
-      return
-    }
-
-    if e.ID != nil {
-      se.PK = idToStr(*(e.ID))
-      se.ID = e.ID
-    }
-    if e.Place != nil {
-      se.Place = e.Place
-    }
-    if e.Country != nil {
-      se.Country = e.Country
-    }
-    if e.City != nil {
-      se.City = e.City
-    }
-    if e.Distance != nil {
-      se.Distance = e.Distance
-    }
-
-    CacheRecord(entityType, se.PK, se)
-
-    if err := t.Insert(entityType, se); err != nil {
-      t.Abort()
-      log.Println(id, err)
-      return
-    }
-    t.Commit()
-  // }(id, e)
+  UpdateLocationProcess(id, e)
 
   return nil
+}
+
+func UpdateLocationProcess(id uint32, e *Location) {
+  entityType := "locations"
+
+  t := db.Txn(true)
+  sei, err := t.First(entityType, "id", idToStr(id))
+  if err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return
+  }
+  if sei == nil {
+    t.Abort()
+    log.Println(id)
+    return
+  }
+
+  se, ok := sei.(*Location)
+  if !ok {
+    t.Abort()
+    log.Println(id, sei)
+    return
+  }
+
+  if e.ID != nil {
+    se.PK = idToStr(*(e.ID))
+    se.ID = e.ID
+  }
+  if e.Place != nil {
+    se.Place = e.Place
+  }
+  if e.Country != nil {
+    se.Country = e.Country
+  }
+  if e.City != nil {
+    se.City = e.City
+  }
+  if e.Distance != nil {
+    se.Distance = e.Distance
+  }
+
+  CacheRecord(entityType, se.PK, se)
+
+  if err := t.Insert(entityType, se); err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return
+  }
+  t.Commit()
 }
 
 func UpdateUser(id uint32, e *User) error {
@@ -258,60 +269,62 @@ func UpdateUser(id uint32, e *User) error {
     return ErrBadParams
   }
 
-  // go func(id uint32, e *User) {
-    entityType := "users"
-
-    t := db.Txn(true)
-    sei, err := t.First(entityType, "id", idToStr(id))
-    if err != nil {
-      t.Abort()
-      log.Println(id, err)
-      return
-    }
-    if sei == nil {
-      t.Abort()
-      log.Println(id)
-      return
-    }
-
-    se, ok := sei.(*User)
-    if !ok {
-      t.Abort()
-      log.Println(id, sei)
-      return
-    }
-
-    if e.ID != nil {
-      se.PK = idToStr(*(e.ID))
-      se.ID = e.ID
-    }
-    if e.Email != nil {
-      se.Email = e.Email
-    }
-    if e.FirstName != nil {
-      se.FirstName = e.FirstName
-    }
-    if e.LastName != nil {
-      se.LastName = e.LastName
-    }
-    if e.Gender != nil {
-      se.Gender = e.Gender
-    }
-    if e.BirthDate != nil {
-      se.BirthDate = e.BirthDate
-    }
-
-    CacheRecord(entityType, se.PK, se)
-
-    if err := t.Insert(entityType, se); err != nil {
-      t.Abort()
-      log.Println(id, err)
-      return
-    }
-    t.Commit()
-  // }(id, e)
+  UpdateUserProcess(id, e)
 
   return nil
+}
+
+func UpdateUserProcess(id uint32, e *User) {
+  entityType := "users"
+
+  t := db.Txn(true)
+  sei, err := t.First(entityType, "id", idToStr(id))
+  if err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return
+  }
+  if sei == nil {
+    t.Abort()
+    log.Println(id)
+    return
+  }
+
+  se, ok := sei.(*User)
+  if !ok {
+    t.Abort()
+    log.Println(id, sei)
+    return
+  }
+
+  if e.ID != nil {
+    se.PK = idToStr(*(e.ID))
+    se.ID = e.ID
+  }
+  if e.Email != nil {
+    se.Email = e.Email
+  }
+  if e.FirstName != nil {
+    se.FirstName = e.FirstName
+  }
+  if e.LastName != nil {
+    se.LastName = e.LastName
+  }
+  if e.Gender != nil {
+    se.Gender = e.Gender
+  }
+  if e.BirthDate != nil {
+    se.BirthDate = e.BirthDate
+  }
+
+  CacheRecord(entityType, se.PK, se)
+
+  if err := t.Insert(entityType, se); err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return
+  }
+  t.Commit()
 }
 
 func UpdateVisit(id uint32, e *Visit) error {
@@ -319,59 +332,61 @@ func UpdateVisit(id uint32, e *Visit) error {
     return ErrBadParams
   }
 
-  // go func(id uint32, e *Visit) {
-    entityType := "visits"
-
-    t := db.Txn(true)
-    sei, err := t.First(entityType, "id", idToStr(id))
-    if err != nil {
-      t.Abort()
-      log.Println(id, err)
-      return
-    }
-    if sei == nil {
-      t.Abort()
-      log.Println(id)
-      return
-    }
-
-    se, ok := sei.(*Visit)
-    if !ok {
-      t.Abort()
-      log.Println(id, sei)
-      return
-    }
-
-    if e.ID != nil {
-      se.PK = idToStr(*(e.ID))
-      se.ID = e.ID
-    }
-    if e.Location != nil {
-      se.FKLocation = idToStr(*(e.Location))
-      se.Location = e.Location
-    }
-    if e.User != nil {
-      se.FKUser = idToStr(*(e.User))
-      se.User = e.User
-    }
-    if e.VisitedAt != nil {
-      se.VisitedAt= e.VisitedAt
-    }
-    if e.Mark != nil {
-      se.Mark = e.Mark
-    }
-
-    CacheRecord(entityType, se.PK, se)
-
-    if err := t.Insert(entityType, se); err != nil {
-      t.Abort()
-      log.Println(id, err)
-      return
-    }
-    t.Commit()
-  // }(id, e)
+  UpdateVisitProcess(id, e)
 
   return nil
+}
+
+func UpdateVisitProcess(id uint32, e *Visit) {
+  entityType := "visits"
+
+  t := db.Txn(true)
+  sei, err := t.First(entityType, "id", idToStr(id))
+  if err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return
+  }
+  if sei == nil {
+    t.Abort()
+    log.Println(id)
+    return
+  }
+
+  se, ok := sei.(*Visit)
+  if !ok {
+    t.Abort()
+    log.Println(id, sei)
+    return
+  }
+
+  if e.ID != nil {
+    se.PK = idToStr(*(e.ID))
+    se.ID = e.ID
+  }
+  if e.Location != nil {
+    se.FKLocation = idToStr(*(e.Location))
+    se.Location = e.Location
+  }
+  if e.User != nil {
+    se.FKUser = idToStr(*(e.User))
+    se.User = e.User
+  }
+  if e.VisitedAt != nil {
+    se.VisitedAt= e.VisitedAt
+  }
+  if e.Mark != nil {
+    se.Mark = e.Mark
+  }
+
+  go CacheRecord(entityType, se.PK, se)
+
+  if err := t.Insert(entityType, se); err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return
+  }
+  t.Commit()
 }
 
 func GetLocation(id uint32, must bool) *Location {
