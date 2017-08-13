@@ -5,7 +5,6 @@ import (
   "log"
   "regexp"
   "strconv"
-  "time"
   "github.com/valyala/fasthttp"
 )
 
@@ -41,53 +40,53 @@ func route(ctx *fasthttp.RequestCtx) {
         stage = 1
       } else if stage == 2 {
         stage = 3
-        go func() {
-          time.Sleep(25 * time.Second)
-          stage = 4
-        }()
+        // go func() {
+        //   time.Sleep(25 * time.Second)
+        //   stage = 4
+        // }()
       }
 
       cached, ok := CacheGet(path)
       if ok {
-        responseBytes(ctx, cached)
+        ResponseBytes(ctx, cached)
         return
       }
 
       // matches = reLocation.FindStringSubmatch(path)
       // if len(matches) > 0 {
-      //   actionGetLocation(ctx, parseID(matches[1]))
+      //   ActionGetLocation(ctx, parseID(matches[1]))
       //   return
       // }
       // matches = reUser.FindStringSubmatch(path)
       // if len(matches) > 0 {
-      //   actionGetUser(ctx, parseID(matches[1]))
+      //   ActionGetUser(ctx, parseID(matches[1]))
       //   return
       // }
       // matches = reVisit.FindStringSubmatch(path)
       // if len(matches) > 0 {
-      //   actionGetVisit(ctx, parseID(matches[1]))
+      //   ActionGetVisit(ctx, parseID(matches[1]))
       //   return
       // }
       matches = reUserVisits.FindStringSubmatch(path)
       if len(matches) > 0 {
-        if stage == 4 {
-          responseStatus(ctx, 400)
+        if stage == 3 {
+          ResponseStatus(ctx, 400)
           return
         }
         id := parseID(matches[1])
         v := ctx.URI().QueryArgs()
-        actionGetUserVisits(ctx, id, v)
+        ActionGetUserVisits(ctx, id, v)
         return
       }
       matches = reLocationAvg.FindStringSubmatch(path)
       if len(matches) > 0 {
-        if stage == 4 {
-          responseStatus(ctx, 400)
+        if stage == 3 {
+          ResponseStatus(ctx, 400)
           return
         }
         id := parseID(matches[1])
         v := ctx.URI().QueryArgs()
-        actionGetLocationAvg(ctx, id, v)
+        ActionGetLocationAvg(ctx, id, v)
         return
       }
     case "POST":
@@ -96,15 +95,15 @@ func route(ctx *fasthttp.RequestCtx) {
       }
       // new
       if path == "/locations/new" {
-        actionNewLocation(ctx)
+        ActionNewLocation(ctx)
         return
       }
       if path == "/users/new" {
-        actionNewUser(ctx)
+        ActionNewUser(ctx)
         return
       }
       if path == "/visits/new" {
-        actionNewVisit(ctx)
+        ActionNewVisit(ctx)
         return
       }
 
@@ -114,207 +113,52 @@ func route(ctx *fasthttp.RequestCtx) {
         matches = reLocation.FindStringSubmatch(path)
         if len(matches) > 0 {
           id := parseID(matches[1])
-          actionUpdateLocation(ctx, id)
+          ActionUpdateLocation(ctx, id)
           return
         }
         matches = reUser.FindStringSubmatch(path)
         if len(matches) > 0 {
           id := parseID(matches[1])
-          actionUpdateUser(ctx, id)
+          ActionUpdateUser(ctx, id)
           return
         }
         matches = reVisit.FindStringSubmatch(path)
         if len(matches) > 0 {
           id := parseID(matches[1])
-          actionUpdateVisit(ctx, id)
+          ActionUpdateVisit(ctx, id)
           return
         }
       }
   }
 
-  responseStatus(ctx, 404)
+  ResponseStatus(ctx, 404)
 }
 
-// func actionGetLocation(ctx *fasthttp.RequestCtx, id uint32) {
-//   l := GetLocation(id)
-//   if l == nil {
-//     responseStatus(ctx, 404)
-//     return
-//   }
-//   responseJSON(ctx, l)
-// }
-//
-// func actionGetUser(ctx *fasthttp.RequestCtx, id uint32) {
-//   u := GetUser(id)
-//   if u == nil {
-//     responseStatus(ctx, 404)
-//     return
-//   }
-//   responseJSON(ctx, u)
-// }
-//
-// func actionGetVisit(ctx *fasthttp.RequestCtx, id uint32) {
-//   v := GetVisit(id)
-//   if v == nil {
-//     responseStatus(ctx, 404)
-//     return
-//   }
-//   responseJSON(ctx, v)
-// }
-
-type UserVisitsResponse struct {
-  Visits []UserVisit `json:"visits"`
-}
-
-func actionGetUserVisits(ctx *fasthttp.RequestCtx, userID uint32, v *fasthttp.Args) {
-  visits, err := GetUserVisits(userID, v)
-  if err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, UserVisitsResponse{visits})
-}
-
-type LocationAvgResponse struct {
-  Avg float32 `json:"avg"`
-}
-
-func actionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
-  avg, err := GetLocationAvg(id, v)
-  if err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, LocationAvgResponse{avg})
-}
-
-type DummyResponse struct {}
-
-func actionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
-  l := &Location{
-    ID: 919191919,
-    Place: "919191919",
-    Country: "919191919",
-    City: "919191919",
-    Distance: 919191919,
-  }
-  if err := json.Unmarshal(ctx.PostBody(), l); err != nil {
-    responseStatus(ctx, 400)
-    return
-  }
-  if err := UpdateLocation(id, l); err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, DummyResponse{})
-}
-
-func actionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
-  u := &User{
-    ID: 919191919,
-    Email: "919191919",
-    FirstName: "919191919",
-    LastName: "919191919",
-    Gender: "919191919",
-    BirthDate: 919191919,
-  }
-  if err := json.Unmarshal(ctx.PostBody(), u); err != nil {
-    responseStatus(ctx, 400)
-    return
-  }
-  if err := UpdateUser(id, u); err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, DummyResponse{})
-}
-
-func actionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
-  v := &Visit{
-    ID: 919191919,
-    Location: 919191919,
-    User: 919191919,
-    VisitedAt: 919191919,
-    Mark: 919191919,
-  }
-  if err := json.Unmarshal(ctx.PostBody(), v); err != nil {
-    responseStatus(ctx, 400)
-    return
-  }
-  if err := UpdateVisit(id, v); err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, DummyResponse{})
-}
-
-func actionNewLocation(ctx *fasthttp.RequestCtx) {
-  // TODO Add defaults
-  l := &Location{}
-  if err := json.Unmarshal(ctx.PostBody(), l); err != nil {
-    responseStatus(ctx, 400)
-    return
-  }
-  if err := AddLocation(l); err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, DummyResponse{})
-}
-
-func actionNewUser(ctx *fasthttp.RequestCtx) {
-  // TODO Add defaults
-  u := &User{}
-  if err := json.Unmarshal(ctx.PostBody(), u); err != nil {
-    responseStatus(ctx, 400)
-    return
-  }
-  if err := AddUser(u); err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, DummyResponse{})
-}
-
-func actionNewVisit(ctx *fasthttp.RequestCtx) {
-  // TODO Add defaults
-  v := &Visit{}
-  if err := json.Unmarshal(ctx.PostBody(), v); err != nil {
-    responseStatus(ctx, 400)
-    return
-  }
-  if err := AddVisit(v); err != nil {
-    responseError(ctx, err)
-    return
-  }
-  responseJSON(ctx, DummyResponse{})
-}
-
-func responseError(ctx *fasthttp.RequestCtx, err error) {
+func ResponseError(ctx *fasthttp.RequestCtx, err error) {
   status := 500
   if err == ErrNotFound {
     status = 404
   } else if err == ErrBadParams {
     status = 400
   }
-  responseStatus(ctx, status)
+  ResponseStatus(ctx, status)
 }
 
-func responseStatus(ctx *fasthttp.RequestCtx, status int) {
+func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
   ctx.SetStatusCode(status)
   ctx.SetConnectionClose()
 }
 
-func responseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
+func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
   body, err := json.Marshal(data)
   if err != nil {
-    responseStatus(ctx, 400)
+    ResponseStatus(ctx, 400)
     return
   }
-  responseBytes(ctx, body)
+  ResponseBytes(ctx, body)
 }
 
-func responseBytes(ctx *fasthttp.RequestCtx, body []byte) {
+func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
   ctx.SetBody(body)
   ctx.SetConnectionClose()

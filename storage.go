@@ -23,163 +23,166 @@ var locations = map[uint32]*Location{}
 var users = map[uint32]*User{}
 var visits = map[uint32]*Visit{}
 
-func CacheRecord(entity string, id uint32, record interface{}) {
-  data, err := json.Marshal(record)
+func CacheRecord(entityType string, id uint32, e interface{}) {
+  data, err := json.Marshal(e)
   if err != nil {
     log.Println(err)
   } else {
-    key := fmt.Sprintf("/%s/%d", entity, id)
+    key := fmt.Sprintf("/%s/%d", entityType, id)
     CacheSet(key, data)
   }
 }
 
-func AddLocation(l *Location) error {
-  if err := l.Validate(); err != nil {
+func AddLocation(e *Location) error {
+  if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  id := *(e.ID)
   ml.Lock()
-  _, ok := locations[l.ID]
+  _, ok := locations[id]
   ml.Unlock()
   if ok {
     return ErrBadParams
   }
   ml.Lock()
-  locations[l.ID] = l
+  locations[id] = e
   ml.Unlock()
-  CacheRecord("locations", l.ID, l)
+  CacheRecord("locations", id, e)
   return nil
 }
 
-func AddUser(u *User) error {
-  if err := u.Validate(); err != nil {
+func AddUser(e *User) error {
+  if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  id := *(e.ID)
   mu.Lock()
-  _, ok := users[u.ID]
+  _, ok := users[id]
   mu.Unlock()
   if ok {
     return ErrBadParams
   }
   mu.Lock()
-  users[u.ID] = u
+  users[id] = e
   mu.Unlock()
-  CacheRecord("users", u.ID, u)
+  CacheRecord("users", id, e)
   return nil
 }
 
-func AddVisit(v *Visit) error {
-  if err := v.Validate(); err != nil {
+func AddVisit(e *Visit) error {
+  if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  id := *(e.ID)
   mv.Lock()
-  _, ok := visits[v.ID]
+  _, ok := visits[id]
   mv.Unlock()
   if ok {
     return ErrBadParams
   }
   mv.Lock()
-  visits[v.ID] = v
+  visits[id] = e
   mv.Unlock()
-  CacheRecord("visits", v.ID, v)
+  CacheRecord("visits", id, e)
   return nil
 }
 
-func UpdateLocation(id uint32, ul *Location) error {
-  if err := ul.Validate(); err != nil {
+func UpdateLocation(id uint32, e *Location) error {
+  if err := e.Validate(); err != nil {
     return ErrBadParams
   }
   ml.Lock()
-  l, ok := locations[id]
+  se, ok := locations[id]
   ml.Unlock()
   if !ok {
     return ErrNotFound
   }
-  if ul.ID == 919191919 {
-    ul.ID = l.ID
+  if e.ID == nil {
+    e.ID = se.ID
   }
-  if ul.Place == "919191919" {
-    ul.Place = l.Place
+  if e.Place == nil {
+    e.Place = se.Place
   }
-  if ul.Country == "919191919" {
-    ul.Country = l.Country
+  if e.Country == nil {
+    e.Country = se.Country
   }
-  if ul.City == "919191919" {
-    ul.City = l.City
+  if e.City == nil {
+    e.City = se.City
   }
-  if ul.Distance == 919191919 {
-    ul.Distance = l.Distance
+  if e.Distance == nil {
+    e.Distance = se.Distance
   }
   ml.Lock()
-  locations[ul.ID] = ul
+  locations[id] = e
   ml.Unlock()
-  CacheRecord("locations", id, ul)
+  CacheRecord("locations", id, e)
   return nil
 }
 
-func UpdateUser(id uint32, uu *User) error {
-  if err := uu.Validate(); err != nil {
+func UpdateUser(id uint32, e *User) error {
+  if err := e.Validate(); err != nil {
     return ErrBadParams
   }
   mu.Lock()
-  u, ok := users[id]
+  se, ok := users[id]
   mu.Unlock()
   if !ok {
     return ErrNotFound
   }
-  if uu.ID == 919191919 {
-    uu.ID = u.ID
+  if e.ID == nil {
+    e.ID = se.ID
   }
-  if uu.Email == "919191919" {
-    uu.Email = u.Email
+  if e.Email == nil {
+    e.Email = se.Email
   }
-  if uu.FirstName == "919191919" {
-    uu.FirstName = u.FirstName
+  if e.FirstName == nil {
+    e.FirstName = se.FirstName
   }
-  if uu.LastName == "919191919" {
-    uu.LastName = u.LastName
+  if e.LastName == nil {
+    e.LastName = se.LastName
   }
-  if uu.Gender == "919191919" {
-    uu.Gender = u.Gender
+  if e.Gender == nil {
+    e.Gender = se.Gender
   }
-  if uu.BirthDate == 919191919 {
-    uu.BirthDate = u.BirthDate
+  if e.BirthDate == nil {
+    e.BirthDate = se.BirthDate
   }
   mu.Lock()
-  users[uu.ID] = uu
+  users[id] = e
   mu.Unlock()
-  CacheRecord("users", id, uu)
+  CacheRecord("users", id, e)
   return nil
 }
 
-func UpdateVisit(id uint32, uv *Visit) error {
-  if err := uv.Validate(); err != nil {
+func UpdateVisit(id uint32, e *Visit) error {
+  if err := e.Validate(); err != nil {
     return ErrBadParams
   }
   mv.Lock()
-  v, ok := visits[id]
+  se, ok := visits[id]
   mv.Unlock()
   if !ok {
     return ErrNotFound
   }
-  if uv.ID == 919191919 {
-    uv.ID = v.ID
+  if e.ID == nil {
+    e.ID = se.ID
   }
-  if uv.Location == 919191919 {
-    uv.Location = v.Location
+  if e.Location == nil {
+    e.Location = se.Location
   }
-  if uv.User == 919191919 {
-    uv.User = v.User
+  if e.User == nil {
+    e.User = se.User
   }
-  if uv.VisitedAt == 919191919 {
-    uv.VisitedAt = v.VisitedAt
+  if e.VisitedAt == nil {
+    e.VisitedAt = se.VisitedAt
   }
-  if uv.Mark == 919191919 {
-    uv.Mark = v.Mark
+  if e.Mark == nil {
+    e.Mark = se.Mark
   }
   mv.Lock()
-  visits[uv.ID] = uv
+  visits[id] = e
   mv.Unlock()
-  CacheRecord("visits", id, uv)
+  CacheRecord("visits", id, e)
   return nil
 }
 
@@ -203,7 +206,7 @@ func (v VisitsByDate) Swap(i, j int) {
   v[i], v[j] = v[j], v[i]
 }
 func (v VisitsByDate) Less(i, j int) bool {
-  return v[i].VisitedAt < v[j].VisitedAt
+  return *(v[i].VisitedAt) < *(v[j].VisitedAt)
 }
 
 func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
@@ -237,7 +240,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   country := ""
   if v.Has("country") {
     country = string(v.Peek("country"))
-    if err := ValidateLength(country, 50); err != nil {
+    if err := ValidateLength(&country, 50); err != nil {
       return userVisits, ErrBadParams
     }
   }
@@ -251,21 +254,21 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     toDistance = uint32(toDistance64)
   }
   for _, v := range visits {
-    if v.User == userID {
-      if fromDate != 0 && v.VisitedAt <= fromDate {
+    if *(v.User) == userID {
+      if fromDate != 0 && *(v.VisitedAt) <= fromDate {
         continue
       }
-      if toDate != 0 && v.VisitedAt >= toDate {
+      if toDate != 0 && *(v.VisitedAt) >= toDate {
         continue
       }
-      l := GetLocation(v.Location)
+      l := GetLocation(*(v.Location))
       if l == nil {
         continue
       }
-      if toDistance != 0 && l.Distance >= toDistance {
+      if toDistance != 0 && *(l.Distance) >= toDistance {
         continue
       }
-      if country != "" && l.Country != country {
+      if country != "" && *(l.Country) != country {
         continue
       }
       uv := UserVisit{
@@ -332,25 +335,25 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
   gender := ""
   if v.Has("gender") {
     gender = string(v.Peek("gender"))
-    if err := ValidateGender(gender); err != nil {
+    if err := ValidateGender(&gender); err != nil {
       return 0, ErrBadParams
     }
   }
   count := 0
   sum := 0
   for _, v := range visits {
-    if v.Location == id {
-      if fromDate != 0 && v.VisitedAt <= fromDate {
+    if *(v.Location) == id {
+      if fromDate != 0 && *(v.VisitedAt) <= fromDate {
         continue
       }
-      if toDate != 0 && v.VisitedAt >= toDate {
+      if toDate != 0 && *(v.VisitedAt) >= toDate {
         continue
       }
-      u := GetUser(v.User)
+      u := GetUser(*(v.User))
       if u == nil {
         continue
       }
-      if gender != "" && u.Gender != gender {
+      if gender != "" && *(u.Gender) != gender {
         continue
       }
       if fromAge != 0 && u.Age() <= fromAge {
@@ -360,7 +363,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
         continue
       }
       count++
-      sum += v.Mark
+      sum += *(v.Mark)
     }
   }
   avg := Round(float64(sum) / float64(count), .5, 5)
