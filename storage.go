@@ -269,6 +269,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
       }
       l := GetLocation(*(v.Location))
       if l == nil {
+        log.Println(userID, *v.Location, "location not found")
         continue
       }
       if toDistance != 0 && *(l.Distance) >= toDistance {
@@ -357,6 +358,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
       }
       u := GetUser(*(v.User))
       if u == nil {
+        log.Println(id, *v.User, "user not found")
         continue
       }
       if gender != "" && *(u.Gender) != gender {
@@ -371,6 +373,9 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
       count++
       sum += *(v.Mark)
     }
+  }
+  if count == 0 {
+    return 0, nil
   }
   avg := Round(float64(sum) / float64(count), .5, 5)
   return float32(avg), nil

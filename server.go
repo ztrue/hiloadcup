@@ -69,10 +69,10 @@ func route(ctx *fasthttp.RequestCtx) {
       // }
       matches = reUserVisits.FindStringSubmatch(path)
       if len(matches) > 0 {
-        if stage == 3 {
-          ResponseStatus(ctx, 400)
-          return
-        }
+        // if stage == 3 {
+        //   ResponseStatus(ctx, 400)
+        //   return
+        // }
         id := parseID(matches[1])
         v := ctx.URI().QueryArgs()
         ActionGetUserVisits(ctx, id, v)
@@ -80,10 +80,10 @@ func route(ctx *fasthttp.RequestCtx) {
       }
       matches = reLocationAvg.FindStringSubmatch(path)
       if len(matches) > 0 {
-        if stage == 3 {
-          ResponseStatus(ctx, 400)
-          return
-        }
+        // if stage == 3 {
+        //   ResponseStatus(ctx, 400)
+        //   return
+        // }
         id := parseID(matches[1])
         v := ctx.URI().QueryArgs()
         ActionGetLocationAvg(ctx, id, v)
@@ -152,6 +152,7 @@ func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
 func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
   body, err := json.Marshal(data)
   if err != nil {
+    log.Println(err, ctx.URI(), data)
     ResponseStatus(ctx, 400)
     return
   }
