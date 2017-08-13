@@ -59,6 +59,16 @@ func PrepareDB() error {
           },
         },
       },
+      "paths": &memdb.TableSchema{
+        Name: "paths",
+        Indexes: map[string]*memdb.IndexSchema{
+          "id": &memdb.IndexSchema{
+            Name: "id",
+            Unique: true,
+            Indexer: &memdb.StringFieldIndex{Field: "Key"},
+          },
+        },
+      },
     },
   }
 
@@ -67,13 +77,50 @@ func PrepareDB() error {
   return err
 }
 
+type Path struct {
+  Key string
+  Body *[]byte
+}
+
+func CacheSet(key string, body *[]byte) error {
+  t := db.Txn(true)
+  p := Path{key, body}
+  if err := t.Insert("paths", p); err != nil {
+    t.Abort()
+    return err
+  }
+  t.Commit()
+  return nil
+}
+
+func CacheGet(key string) (*[]byte, bool) {
+  t := db.Txn(false)
+  defer t.Abort()
+  pi, err := t.First("paths", "id", key)
+  if err != nil {
+    log.Println(key, err)
+    return nil, false
+  }
+  if pi == nil {
+    return nil, false
+  }
+  p, ok := pi.(Path)
+  if !ok {
+    log.Println(key, pi)
+    return nil, false
+  }
+  return p.Body, true
+}
+
 func CacheRecord(entityType, pk string, e interface{}) {
   data, err := json.Marshal(e)
   if err != nil {
     log.Println(err)
   } else {
     key := "/" + entityType + "/" + pk
-    CacheSet(key, &data)
+    if err := CacheSet(key, &data); err != nil {
+      log.Println(err)
+    }
   }
 }
 
@@ -534,7 +581,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
       continue
     }
     // TODO check < fromAge
-    if hasFromAge && u.Age() <= fromAge {
+    if hasFromAge && u.Age() < fromAge {
       continue
     }
     if hasToAge && u.Age() >= toAge {
