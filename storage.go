@@ -117,7 +117,7 @@ func UpdateLocation(id uint32, e *Location) error {
   }
   m.Unlock()
 
-  CacheRecord("locations", id, e)
+  CacheRecord("locations", id, se)
   return nil
 }
 
@@ -154,7 +154,7 @@ func UpdateUser(id uint32, e *User) error {
   }
   m.Unlock()
 
-  CacheRecord("users", id, e)
+  CacheRecord("users", id, se)
   return nil
 }
 
@@ -188,7 +188,7 @@ func UpdateVisit(id uint32, e *Visit) error {
   }
   m.Unlock()
 
-  CacheRecord("visits", id, e)
+  CacheRecord("visits", id, se)
   return nil
 }
 
@@ -252,7 +252,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
   }
   toDistance := uint32(0)
   if v.Has("toDistance") {
-    toDistanceStr := string(v.Peek("fromDate"))
+    toDistanceStr := string(v.Peek("toDistance"))
     toDistance64, err := strconv.ParseUint(toDistanceStr, 10, 32)
     if err != nil {
       return userVisits, ErrBadParams

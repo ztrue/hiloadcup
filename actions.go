@@ -3,7 +3,6 @@ package main
 import (
   "encoding/json"
   "errors"
-  "log"
   "github.com/valyala/fasthttp"
 )
 
@@ -41,8 +40,8 @@ type UserVisitsResponse struct {
   Visits []UserVisit `json:"visits"`
 }
 
-func ActionGetUserVisits(ctx *fasthttp.RequestCtx, userID uint32, v *fasthttp.Args) {
-  visits, err := GetUserVisits(userID, v)
+func ActionGetUserVisits(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
+  visits, err := GetUserVisits(id, v)
   if err != nil {
     ResponseError(ctx, err)
     return
