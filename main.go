@@ -33,4 +33,5 @@ func main() {
 // TODO Add indexes for param queries
 // TODO Easier age check
 // TODO Check why there is a first long request
-// TODO Use faster JSON parser
+// TODO Use ffjson
+// TODO Try async POST

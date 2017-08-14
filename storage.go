@@ -25,7 +25,7 @@ func PrepareDB() error {
           "id": &memdb.IndexSchema{
             Name: "id",
             Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "PK"},
+            Indexer: &memdb.UintFieldIndex{Field: "PK"},
           },
         },
       },
@@ -35,7 +35,7 @@ func PrepareDB() error {
           "id": &memdb.IndexSchema{
             Name: "id",
             Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "PK"},
+            Indexer: &memdb.UintFieldIndex{Field: "PK"},
           },
         },
       },
@@ -45,17 +45,17 @@ func PrepareDB() error {
           "id": &memdb.IndexSchema{
             Name: "id",
             Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "PK"},
+            Indexer: &memdb.UintFieldIndex{Field: "PK"},
           },
-          "userID": &memdb.IndexSchema{
-            Name: "userID",
+          "location": &memdb.IndexSchema{
+            Name: "location",
             Unique: false,
-            Indexer: &memdb.StringFieldIndex{Field: "FKUser"},
+            Indexer: &memdb.UintFieldIndex{Field: "FKLocation"},
           },
-          "locationID": &memdb.IndexSchema{
-            Name: "locationID",
+          "user": &memdb.IndexSchema{
+            Name: "user",
             Unique: false,
-            Indexer: &memdb.StringFieldIndex{Field: "FKLocation"},
+            Indexer: &memdb.UintFieldIndex{Field: "FKUser"},
           },
         },
       },
@@ -112,12 +112,12 @@ func CacheGet(key string) (*[]byte, bool) {
   return p.Body, true
 }
 
-func CacheRecord(entityType, pk string, e interface{}) {
+func CacheRecord(entityType string, id uint32, e interface{}) {
   data, err := json.Marshal(e)
   if err != nil {
     log.Println(err)
   } else {
-    key := "/" + entityType + "/" + pk
+    key := "/" + entityType + "/" + idToStr(id)
     if err := CacheSet(key, &data); err != nil {
       log.Println(err)
     }
@@ -137,7 +137,7 @@ func AddLocation(e *Location) error {
 func AddLocationProcess(e *Location) {
   entityType := "locations"
   id := *(e.ID)
-  e.PK = idToStr(id)
+  e.PK = id
 
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
@@ -163,7 +163,7 @@ func AddUser(e *User) error {
 func AddUserProcess(e *User) {
   entityType := "users"
   id := *(e.ID)
-  e.PK = idToStr(id)
+  e.PK = id
 
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
@@ -189,9 +189,9 @@ func AddVisit(e *Visit) error {
 func AddVisitProcess(e *Visit) {
   entityType := "visits"
   id := *(e.ID)
-  e.PK = idToStr(id)
-  e.FKLocation = idToStr(*(e.Location))
-  e.FKUser = idToStr(*(e.User))
+  e.PK = id
+  e.FKLocation = *(e.Location)
+  e.FKUser = *(e.User)
 
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
@@ -218,7 +218,7 @@ func UpdateLocationProcess(id uint32, e *Location) {
   entityType := "locations"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", idToStr(id))
+  sei, err := t.First(entityType, "id", id)
   if err != nil {
     t.Abort()
     log.Println(id, err)
@@ -238,7 +238,7 @@ func UpdateLocationProcess(id uint32, e *Location) {
   }
 
   if e.ID != nil {
-    se.PK = idToStr(*(e.ID))
+    se.PK = *(e.ID)
     se.ID = e.ID
   }
   if e.Place != nil {
@@ -278,7 +278,7 @@ func UpdateUserProcess(id uint32, e *User) {
   entityType := "users"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", idToStr(id))
+  sei, err := t.First(entityType, "id", id)
   if err != nil {
     t.Abort()
     log.Println(id, err)
@@ -298,7 +298,7 @@ func UpdateUserProcess(id uint32, e *User) {
   }
 
   if e.ID != nil {
-    se.PK = idToStr(*(e.ID))
+    se.PK = *(e.ID)
     se.ID = e.ID
   }
   if e.Email != nil {
@@ -341,7 +341,7 @@ func UpdateVisitProcess(id uint32, e *Visit) {
   entityType := "visits"
 
   t := db.Txn(true)
-  sei, err := t.First(entityType, "id", idToStr(id))
+  sei, err := t.First(entityType, "id", id)
   if err != nil {
     t.Abort()
     log.Println(id, err)
@@ -361,15 +361,15 @@ func UpdateVisitProcess(id uint32, e *Visit) {
   }
 
   if e.ID != nil {
-    se.PK = idToStr(*(e.ID))
+    se.PK = *(e.ID)
     se.ID = e.ID
   }
   if e.Location != nil {
-    se.FKLocation = idToStr(*(e.Location))
+    se.FKLocation = *(e.Location)
     se.Location = e.Location
   }
   if e.User != nil {
-    se.FKUser = idToStr(*(e.User))
+    se.FKUser = *(e.User)
     se.User = e.User
   }
   if e.VisitedAt != nil {
@@ -393,7 +393,7 @@ func GetLocation(id uint32, must bool) *Location {
   entityType := "locations"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", idToStr(id))
+  ei, err := t.First(entityType, "id", id)
   if err != nil {
     log.Println(id, err)
     return nil
@@ -412,7 +412,7 @@ func GetUser(id uint32, must bool) *User {
   entityType := "users"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", idToStr(id))
+  ei, err := t.First(entityType, "id", id)
   if err != nil {
     log.Println(id, err)
     return nil
@@ -431,7 +431,7 @@ func GetVisit(id uint32, must bool) *Visit {
   entityType := "visits"
   t := db.Txn(false)
   defer t.Abort()
-  ei, err := t.First(entityType, "id", idToStr(id))
+  ei, err := t.First(entityType, "id", id)
   if err != nil {
     log.Println(id, err)
     return nil
@@ -500,7 +500,7 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     toDistance = uint32(toDistance64)
   }
   t := db.Txn(false)
-  iter, err := t.Get("visits", "userID", idToStr(userID))
+  iter, err := t.Get("visits", "user", userID)
   if err != nil {
     t.Abort()
     log.Println(userID, err)
@@ -517,6 +517,19 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
       log.Println(userID, vi)
       return userVisits, ErrInternal
     }
+
+    // Dirty hack begin
+    v2 := GetVisit(*(v.ID), true)
+    if v2 == nil {
+      log.Println(userID, *(v.ID))
+      continue
+    }
+    if *(v2.User) != userID {
+      log.Println(userID, *(v.ID), "skip")
+      continue
+    }
+    // Dirty hack end
+
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       continue
     }
@@ -595,7 +608,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     }
   }
   t := db.Txn(false)
-  iter, err := t.Get("visits", "locationID", idToStr(id))
+  iter, err := t.Get("visits", "location", id)
   if err != nil {
     t.Abort()
     log.Println(id, err)
@@ -614,6 +627,19 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
       log.Println(id, vi)
       return 0, ErrInternal
     }
+
+    // Dirty hack begin
+    v2 := GetVisit(*(v.ID), true)
+    if v2 == nil {
+      log.Println(id, *(v.ID))
+      continue
+    }
+    if *(v2.Location) != id {
+      log.Println(id, *(v.ID), "skip")
+      continue
+    }
+    // Dirty hack end
+
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       continue
     }
