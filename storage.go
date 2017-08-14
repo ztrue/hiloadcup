@@ -194,6 +194,8 @@ func AddUserProcess(e *User) {
   id := *(e.ID)
   e.PK = id
 
+  e.Age = e.CalculateAgeEasy()
+
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
     t.Abort()
@@ -347,6 +349,7 @@ func UpdateUserProcess(id uint32, e *User) {
   }
   if e.BirthDate != nil {
     se.BirthDate = e.BirthDate
+    se.Age = e.CalculateAgeEasy()
   }
 
   if err := t.Insert(entityType, se); err != nil {
@@ -686,10 +689,10 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     if hasGender && *(u.Gender) != gender {
       continue
     }
-    if hasFromAge && u.Age() < fromAge {
+    if hasFromAge && u.Age < fromAge {
       continue
     }
-    if hasToAge && u.Age() >= toAge {
+    if hasToAge && u.Age >= toAge {
       continue
     }
     count++

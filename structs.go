@@ -24,6 +24,7 @@ type User struct {
   LastName *string `json:"last_name"`
   Gender *string `json:"gender"`
   BirthDate *int `json:"birth_date"`
+  Age int `json:"-"`
 }
 
 type Visit struct {
@@ -137,7 +138,15 @@ func (u *User) Validate() error {
   return nil
 }
 
-func (u *User) Age() int {
+func (u *User) CalculateAgeEasy() int {
+  if u == nil {
+    return 0
+  }
+  // Seconds in year 365.24 * 24 * 60 * 60 = 31556736
+  return (int(time.Now().Unix()) - *(u.BirthDate)) / 31556736
+}
+
+func (u *User) CalculateAge() int {
   if u == nil {
     return 0
   }

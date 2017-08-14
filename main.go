@@ -34,6 +34,6 @@ func main() {
 // TODO Easier age check
 // TODO Check why there is a first long request
 // TODO Use ffjson
-// TODO Cache age
 // TODO Try async POST
 // TODO Remove logs
+// TODO Cache UserVisits when POST
