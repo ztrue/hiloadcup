@@ -6,6 +6,7 @@ import (
   "log"
   "sort"
   "strconv"
+  "sync"
   "github.com/valyala/fasthttp"
   "github.com/hashicorp/go-memdb"
 )
@@ -15,6 +16,14 @@ var db *memdb.MemDB
 var ErrNotFound = errors.New("not found")
 var ErrBadParams = errors.New("bad params")
 var ErrInternal = errors.New("internal")
+
+// visit ID => location ID
+var locations = map[uint32]uint32{}
+// visit ID => user ID
+var users = map[uint32]uint32{}
+
+var ml = &sync.Mutex{}
+var mu = &sync.Mutex{}
 
 func PrepareDB() error {
   schema := &memdb.DBSchema{
@@ -124,6 +133,26 @@ func CacheRecord(entityType string, id uint32, e interface{}) {
   }
 }
 
+func SetVisitLocation(visitID, locationID uint32) {
+  ml.Lock()
+  locations[visitID] = locationID
+  ml.Unlock()
+}
+
+func SetVisitUser(visitID, userID uint32) {
+  ml.Lock()
+  users[visitID] = userID
+  ml.Unlock()
+}
+
+func GetVisitLocation(visitID uint32) uint32 {
+  return locations[visitID]
+}
+
+func GetVisitUser(visitID uint32) uint32 {
+  return users[visitID]
+}
+
 func AddLocation(e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
@@ -200,6 +229,9 @@ func AddVisitProcess(e *Visit) {
     return
   }
   t.Commit()
+
+  SetVisitLocation(id, e.FKLocation)
+  SetVisitUser(id, e.FKUser)
 
   CacheRecord(entityType, e.PK, e)
 }
@@ -364,6 +396,7 @@ func UpdateVisitProcess(id uint32, e *Visit) {
     se.PK = *(e.ID)
     se.ID = e.ID
   }
+
   if e.Location != nil {
     se.FKLocation = *(e.Location)
     se.Location = e.Location
@@ -385,6 +418,13 @@ func UpdateVisitProcess(id uint32, e *Visit) {
     return
   }
   t.Commit()
+
+  if e.Location != nil {
+    SetVisitLocation(id, se.FKLocation)
+  }
+  if e.User != nil {
+    SetVisitUser(id, se.FKUser)
+  }
 
   CacheRecord(entityType, se.PK, se)
 }
@@ -519,12 +559,8 @@ func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
     }
 
     // Dirty hack begin
-    v2 := GetVisit(*(v.ID), true)
-    if v2 == nil {
-      log.Println(userID, *(v.ID))
-      continue
-    }
-    if *(v2.User) != userID {
+    cachedUserID := GetVisitUser(*(v.ID))
+    if cachedUserID != userID {
       log.Println(userID, *(v.ID), "skip")
       continue
     }
@@ -629,12 +665,8 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     }
 
     // Dirty hack begin
-    v2 := GetVisit(*(v.ID), true)
-    if v2 == nil {
-      log.Println(id, *(v.ID))
-      continue
-    }
-    if *(v2.Location) != id {
+    cachedLocationID := GetVisitLocation(*(v.ID))
+    if cachedLocationID != id {
       log.Println(id, *(v.ID), "skip")
       continue
     }
