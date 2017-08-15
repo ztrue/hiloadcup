@@ -48,7 +48,8 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
     }
     toDistance = uint32(toDistance64)
   }
-  visits := GetCachedUserVisits(id)
+  // visits := GetCachedUserVisits(id)
+  visits := GetAllUserVisits(id)
   if visits == nil {
     log.Println(id)
     return userVisits, ErrInternal
@@ -121,7 +122,8 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
       return locationAvg, ErrBadParams
     }
   }
-  visits := GetCachedLocationAvg(id)
+  // visits := GetCachedLocationAvg(id)
+  visits := GetAllLocationVisits(id)
   if visits == nil {
     log.Println(id)
     return locationAvg, ErrInternal

@@ -5,6 +5,7 @@ import (
   "fmt"
   "log"
   "sort"
+  "sync"
 )
 
 var LocationCache = map[uint32]*Location{}
@@ -15,22 +16,32 @@ var LocationAvgCache = map[uint32][]*Visit{}
 var PathCache = map[string]*[]byte{}
 var PathParamCache = map[string]*[]byte{}
 
+var mPath = &sync.Mutex{}
+var mPathParam = &sync.Mutex{}
+
 func PrepareCache() {
-  for id := range LocationsList {
-    CacheLocation(id)
-  }
-  for id := range UsersList {
-    CacheUser(id)
-  }
-  for id := range LocationsMap {
-    CacheVisit(id)
-  }
-  for id := range UsersList {
-    CacheUserVisits(id)
-  }
-  for id := range LocationsList {
-    CacheLocationAvg(id)
-  }
+  go func() {
+    for id := range LocationsList {
+      CacheLocation(id)
+    }
+  }()
+  go func() {
+    for id := range UsersList {
+      CacheUser(id)
+    }
+  }()
+  go func() {
+    for id := range LocationsMap {
+      CacheVisit(id)
+    }
+  }()
+  // TODO
+  // for id := range UsersList {
+  //   CacheUserVisits(id)
+  // }
+  // for id := range LocationsList {
+  //   CacheLocationAvg(id)
+  // }
 }
 
 func LocationExists(id uint32) bool {
@@ -92,7 +103,9 @@ func CachePath(path string, data interface{}) {
     log.Println(path)
     return
   }
+  mPath.Lock()
   PathCache[path] = &body
+  mPath.Unlock()
 }
 
 func CachePathParam(path string, data interface{}) {
@@ -101,7 +114,9 @@ func CachePathParam(path string, data interface{}) {
     log.Println(path)
     return
   }
+  mPathParam.Lock()
   PathParamCache[path] = &body
+  mPathParam.Unlock()
 }
 
 func CacheLocation(id uint32) {
@@ -194,6 +209,7 @@ func ConvertUserVisits(visits []*Visit, filter func(*Visit, *Location) bool) *Us
     }
     userVisits = append(userVisits, uv)
   }
+  // TODO Move to getter
   sort.Sort(userVisits)
   return &UserVisitsList{
     Visits: userVisits,

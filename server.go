@@ -29,7 +29,7 @@ func Serve(addr string) error {
   Prepare()
   go func() {
     for {
-      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 2 {
+      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
         log.Println("CACHE UPDATE BEGIN")
         PrepareCache()
         log.Println("CACHE UPDATE END")
@@ -56,32 +56,32 @@ func route(ctx *fasthttp.RequestCtx) {
 
       matches = reUserVisits.FindStringSubmatch(path)
       if len(matches) > 0 {
-        if !PathParamExists(path) {
-          ResponseStatus(ctx, 404)
-          return
-        }
+        // if !PathParamExists(path) {
+        //   ResponseStatus(ctx, 404)
+        //   return
+        // }
         v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("country") && !v.Has("toDistance") {
-          cached := GetCachedPathParam(path)
-          ResponseBytes(ctx, cached)
-          return
-        }
+        // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("country") && !v.Has("toDistance") {
+        //   cached := GetCachedPathParam(path)
+        //   ResponseBytes(ctx, cached)
+        //   return
+        // }
         id := parseID(matches[1])
         ActionGetUserVisits(ctx, id, v)
         return
       }
       matches = reLocationAvg.FindStringSubmatch(path)
       if len(matches) > 0 {
-        if !PathParamExists(path) {
-          ResponseStatus(ctx, 404)
-          return
-        }
+        // if !PathParamExists(path) {
+        //   ResponseStatus(ctx, 404)
+        //   return
+        // }
         v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
-          cached := GetCachedPathParam(path)
-          ResponseBytes(ctx, cached)
-          return
-        }
+        // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
+        //   cached := GetCachedPathParam(path)
+        //   ResponseBytes(ctx, cached)
+        //   return
+        // }
         id := parseID(matches[1])
         ActionGetLocationAvg(ctx, id, v)
         return
