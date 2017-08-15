@@ -9,6 +9,8 @@ import (
 var ErrNilParam = errors.New("nil param")
 var ErrEmptyEntity = errors.New("empty entity")
 
+var dummyResponse = []byte("{}")
+
 func ActionGetUserVisits(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
   visits, err := GetUserVisits(id, v)
   if err != nil {
@@ -39,7 +41,7 @@ func ActionNewLocation(ctx *fasthttp.RequestCtx) {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, DummyResponse{})
+  ResponseBytes(ctx, dummyResponse)
 }
 
 func ActionNewUser(ctx *fasthttp.RequestCtx) {
@@ -52,7 +54,7 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, DummyResponse{})
+  ResponseBytes(ctx, dummyResponse)
 }
 
 func ActionNewVisit(ctx *fasthttp.RequestCtx) {
@@ -65,7 +67,7 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, DummyResponse{})
+  ResponseBytes(ctx, dummyResponse)
 }
 
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
@@ -78,7 +80,7 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, DummyResponse{})
+  ResponseBytes(ctx, dummyResponse)
 }
 
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
@@ -91,7 +93,7 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, DummyResponse{})
+  ResponseBytes(ctx, dummyResponse)
 }
 
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
@@ -104,7 +106,7 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, DummyResponse{})
+  ResponseBytes(ctx, dummyResponse)
 }
 
 func checkRequest(ctx *fasthttp.RequestCtx, e interface{}) error {

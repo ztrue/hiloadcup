@@ -32,8 +32,8 @@ var UserCache = map[uint32]*User{}
 var VisitCache = map[uint32]*Visit{}
 var UserVisitsCache = map[uint32][]*Visit{}
 var LocationAvgCache = map[uint32][]*Visit{}
-var PathCache = map[string]*[]byte{}
-var PathParamCache = map[string]*[]byte{}
+var PathCache = map[string][]byte{}
+var PathParamCache = map[string][]byte{}
 
 var mLocation = &sync.Mutex{}
 var mUser = &sync.Mutex{}
@@ -231,11 +231,11 @@ func GetCachedLocationAvg(id uint32) []*Visit {
   return LocationAvgCache[id]
 }
 
-func GetCachedPath(path string) *[]byte {
+func GetCachedPath(path string) []byte {
   return PathCache[path]
 }
 
-func GetCachedPathParam(path string) *[]byte {
+func GetCachedPathParam(path string) []byte {
   return PathParamCache[path]
 }
 
@@ -246,7 +246,7 @@ func CachePath(path string, data interface{}) {
     return
   }
   mPath.Lock()
-  PathCache[path] = &body
+  PathCache[path] = body
   mPath.Unlock()
 }
 
@@ -257,7 +257,7 @@ func CachePathParam(path string, data interface{}) {
     return
   }
   mPathParam.Lock()
-  PathParamCache[path] = &body
+  PathParamCache[path] = body
   mPathParam.Unlock()
 }
 

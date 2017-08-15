@@ -152,22 +152,19 @@ func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
 }
 
 func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
-  body, err := json.Marshal(data)
-  if err != nil {
+  ctx.SetStatusCode(200)
+  if err := json.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
     log.Println(err, ctx.URI(), data)
     ResponseStatus(ctx, 400)
     return
   }
-  ResponseBytes(ctx, &body)
+  ctx.SetConnectionClose()
 }
 
-func ResponseBytes(ctx *fasthttp.RequestCtx, body *[]byte) {
+func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
-  b := fasthttp.AcquireByteBuffer()
-  b.Write(*body)
-  ctx.SetBody(b.B)
+  ctx.SetBody(body)
   ctx.SetConnectionClose()
-  fasthttp.ReleaseByteBuffer(b)
 }
 
 func parseID(str string) uint32 {
