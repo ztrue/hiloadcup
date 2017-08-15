@@ -10,9 +10,9 @@ var ErrBadParams = errors.New("bad params")
 var ErrInternal = errors.New("internal")
 
 func AddLocation(e *Location) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := e.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   AddLocationProcess(e)
   return nil
 }
@@ -32,9 +32,9 @@ func AddLocationProcess(e *Location) {
 }
 
 func AddUser(e *User) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := e.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   AddUserProcess(e)
   return nil
 }
@@ -55,9 +55,9 @@ func AddUserProcess(e *User) {
 }
 
 func AddVisit(e *Visit) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
-  }
+  // if err := e.Validate(); err != nil {
+  //   return ErrBadParams
+  // }
   AddVisitProcess(e)
   return nil
 }
