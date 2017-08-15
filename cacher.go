@@ -4,15 +4,10 @@ import (
   "encoding/json"
   "fmt"
   "log"
-  "sort"
   "strconv"
   "sync"
+  "sort"
 )
-
-// visit ID => location ID
-var LocationsMap = map[uint32]uint32{}
-// visit ID => user ID
-var UsersMap = map[uint32]uint32{}
 
 // location ID => true
 var LocationsList = map[uint32]*Location{}
@@ -28,8 +23,6 @@ var LocationVisitsMap = map[uint32]map[uint32]bool{}
 
 var NewPaths = map[string]bool{}
 
-var mlm = &sync.Mutex{}
-var mum = &sync.Mutex{}
 var mll = &sync.Mutex{}
 var mul = &sync.Mutex{}
 var mvl = &sync.Mutex{}
@@ -49,28 +42,28 @@ var mPath = &sync.Mutex{}
 var mPathParam = &sync.Mutex{}
 
 func PrepareCache() {
-  go func() {
-    for id := range LocationsList {
-      CacheLocation(id)
-    }
-  }()
-  go func() {
-    for id := range UsersList {
-      CacheUser(id)
-    }
-  }()
-  go func() {
-    for id := range LocationsMap {
-      CacheVisit(id)
-    }
-  }()
+  // go func() {
+  //   for id := range LocationsList {
+  //     CacheLocation(id)
+  //   }
+  // }()
+  // go func() {
+  //   for id := range UsersList {
+  //     CacheUser(id)
+  //   }
+  // }()
+  // go func() {
+  //   for id := range VisitsList {
+  //     CacheVisit(id)
+  //   }
+  // }()
   // TODO
-  // for id := range UsersList {
-  //   CacheUserVisits(id)
-  // }
-  // for id := range LocationsList {
-  //   CacheLocationAvg(id)
-  // }
+  for id := range UsersList {
+    CacheUserVisits(id)
+  }
+  for id := range LocationsList {
+    CacheLocationAvg(id)
+  }
 }
 
 func AddNewPath(entityType string, id uint32) {
@@ -103,34 +96,16 @@ func AddVisitList(id uint32, e *Visit) {
   mvl.Unlock()
 }
 
-func SetVisitLocation(visitID, locationID uint32) {
-  mlm.Lock()
-  LocationsMap[visitID] = locationID
-  mlm.Unlock()
-}
-
-func SetVisitUser(visitID, userID uint32) {
-  mum.Lock()
-  UsersMap[visitID] = userID
-  mum.Unlock()
-}
-
-func GetVisitLocation(visitID uint32) uint32 {
-  return LocationsMap[visitID]
-}
-
-func GetVisitUser(visitID uint32) uint32 {
-  return UsersMap[visitID]
-}
-
 func AddUserVisit(userID, visitID, oldUserID uint32) {
   muvm.Lock()
-  m, ok := UserVisitsMap[userID]
-  if !ok {
-    m = map[uint32]bool{}
-    UserVisitsMap[userID] = m
+  _, ok := UserVisitsMap[userID]
+  if ok {
+    UserVisitsMap[userID][visitID] = true
+  } else {
+    UserVisitsMap[userID] = map[uint32]bool{
+      visitID: true,
+    }
   }
-  m[visitID] = true
   if oldUserID > 0 {
     UserVisitsMap[oldUserID][visitID] = false
   }
@@ -139,12 +114,14 @@ func AddUserVisit(userID, visitID, oldUserID uint32) {
 
 func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
   mlvm.Lock()
-  m, ok := LocationVisitsMap[locationID]
-  if !ok {
-    m = map[uint32]bool{}
-    LocationVisitsMap[locationID] = m
+  _, ok := LocationVisitsMap[locationID]
+  if ok {
+    LocationVisitsMap[locationID][visitID] = true
+  } else {
+    LocationVisitsMap[locationID] = map[uint32]bool{
+      visitID: true,
+    }
   }
-  m[visitID] = true
   if oldLocationID > 0 {
     LocationVisitsMap[oldLocationID][visitID] = false
   }
@@ -193,22 +170,23 @@ func GetLocationVisitsIDs(locationID uint32) []uint32 {
 }
 
 func GetUserVisitsEntities(id uint32) []*Visit {
-  visits := []*Visit{}
-  for visitID := range GetUserVisitsIDs(id) {
-    v := GetCachedVisit(id)
+  visits := VisitsByDate{}
+  for _, visitID := range GetUserVisitsIDs(id) {
+    v := GetCachedVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
     }
     visits = append(visits, v)
   }
+  sort.Sort(visits)
   return visits
 }
 
 func GetLocationVisitsEntities(id uint32) []*Visit {
   visits := []*Visit{}
-  for visitID := range GetLocationVisitsIDs(id) {
-    v := GetCachedVisit(id)
+  for _, visitID := range GetLocationVisitsIDs(id) {
+    v := GetCachedVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
@@ -284,10 +262,10 @@ func CacheLocation(id uint32) {
     log.Println(id)
     return
   }
-  CacheLocationEntity(id, e)
+  CacheLocationResponse(id, e)
 }
 
-func CacheLocationEntity(id uint32, e *Location) {
+func CacheLocationResponse(id uint32, e *Location) {
   LocationCache[id] = e
   path := fmt.Sprintf("/locations/%d", id)
   CachePath(path, e)
@@ -299,10 +277,10 @@ func CacheUser(id uint32) {
     log.Println(id)
     return
   }
-  CacheUserEntity(id, e)
+  CacheUserResponse(id, e)
 }
 
-func CacheUserEntity(id uint32, e *User) {
+func CacheUserResponse(id uint32, e *User) {
   UserCache[id] = e
   path := fmt.Sprintf("/users/%d", id)
   CachePath(path, e)
@@ -314,10 +292,10 @@ func CacheVisit(id uint32) {
     log.Println(id)
     return
   }
-  CacheVisitEntity(id, e)
+  CacheVisitResponse(id, e)
 }
 
-func CacheVisitEntity(id uint32, e *Visit) {
+func CacheVisitResponse(id uint32, e *Visit) {
   VisitCache[id] = e
   path := fmt.Sprintf("/visits/%d", id)
   CachePath(path, e)
@@ -326,6 +304,10 @@ func CacheVisitEntity(id uint32, e *Visit) {
 func CacheUserVisits(id uint32) {
   visits := GetUserVisitsEntities(id)
   UserVisitsCache[id] = visits
+}
+
+func CacheUserVisitsResponse(id uint32) {
+  visits := GetCachedUserVisits(id)
   userVisits := ConvertUserVisits(visits, func(v *Visit, l *Location) bool {
     return true
   })
@@ -336,6 +318,10 @@ func CacheUserVisits(id uint32) {
 func CacheLocationAvg(id uint32) {
   visits := GetLocationVisitsEntities(id)
   LocationAvgCache[id] = visits
+}
+
+func CacheLocationAvgResponse(id uint32) {
+  visits := GetCachedLocationAvg(id)
   locationAvg := ConvertLocationAvg(visits, func(v *Visit, u *User) bool {
     return true
   })
@@ -343,7 +329,7 @@ func CacheLocationAvg(id uint32) {
   CachePathParam(path, locationAvg)
 }
 
-type VisitsByDate []*UserVisit
+type VisitsByDate []*Visit
 func (v VisitsByDate) Len() int {
   return len(v)
 }
@@ -355,7 +341,7 @@ func (v VisitsByDate) Less(i, j int) bool {
 }
 
 func ConvertUserVisits(visits []*Visit, filter func(*Visit, *Location) bool) *UserVisitsList {
-  userVisits := VisitsByDate{}
+  userVisits := []*UserVisit{}
   for _, v := range visits {
     l := GetCachedLocation(v.FKLocation)
     if l == nil {
@@ -372,8 +358,6 @@ func ConvertUserVisits(visits []*Visit, filter func(*Visit, *Location) bool) *Us
     }
     userVisits = append(userVisits, uv)
   }
-  // TODO Move to getter
-  sort.Sort(userVisits)
   return &UserVisitsList{
     Visits: userVisits,
   }

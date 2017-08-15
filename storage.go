@@ -25,7 +25,7 @@ func AddLocationProcess(e *Location) {
 
   AddLocationList(id, e)
   // AddNewPath("locations", id)
-  CacheLocationEntity(id, e)
+  CacheLocationResponse(id, e)
 }
 
 func AddUser(e *User) error {
@@ -46,7 +46,7 @@ func AddUserProcess(e *User) {
 
   AddUserList(id, e)
   // AddNewPath("users", id)
-  CacheUserEntity(id, e)
+  CacheUserResponse(id, e)
 }
 
 func AddVisit(e *Visit) error {
@@ -66,12 +66,10 @@ func AddVisitProcess(e *Visit) {
   e.FKUser = *(e.User)
 
   AddVisitList(id, e)
-  SetVisitLocation(id, e.FKLocation)
-  SetVisitUser(id, e.FKUser)
-  AddUserVisit(e.FKUser, id, 0)
   AddLocationVisit(e.FKLocation, id, 0)
+  AddUserVisit(e.FKUser, id, 0)
   // AddNewPath("visits", id)
-  CacheVisitEntity(id, e)
+  CacheVisitResponse(id, e)
 }
 
 func UpdateLocation(id uint32, e *Location) error {
@@ -108,7 +106,7 @@ func UpdateLocationProcess(id uint32, e *Location) {
     se.Distance = e.Distance
   }
 
-  CacheLocationEntity(id, se)
+  CacheLocationResponse(id, se)
 }
 
 func UpdateUser(id uint32, e *User) error {
@@ -149,7 +147,7 @@ func UpdateUserProcess(id uint32, e *User) {
     se.Age = e.CalculateAge()
   }
 
-  CacheUserEntity(id, se)
+  CacheUserResponse(id, se)
 }
 
 func UpdateVisit(id uint32, e *Visit) error {
@@ -193,12 +191,10 @@ func UpdateVisitProcess(id uint32, e *Visit) {
   }
 
   if se.FKLocation != oldLocationID {
-    SetVisitLocation(id, se.FKLocation)
     AddLocationVisit(se.FKLocation, id, oldLocationID)
   }
   if se.FKUser != oldUserID {
-    SetVisitUser(id, se.FKUser)
     AddUserVisit(se.FKUser, id, oldUserID)
   }
-  CacheVisitEntity(id, se)
+  CacheVisitResponse(id, se)
 }

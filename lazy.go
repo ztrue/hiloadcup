@@ -48,8 +48,7 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
     }
     toDistance = uint32(toDistance64)
   }
-  // visits := GetCachedUserVisits(id)
-  visits := GetUserVisitsEntities(id)
+  visits := GetCachedUserVisits(id)
   if visits == nil {
     log.Println(id)
     return userVisits, ErrInternal
@@ -122,8 +121,11 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
       return locationAvg, ErrBadParams
     }
   }
-  // visits := GetCachedLocationAvg(id)
-  visits := GetLocationVisitsEntities(id)
+  visits := GetCachedLocationAvg(id)
+  if visits == nil {
+    log.Println(id)
+    return locationAvg, ErrInternal
+  }
   locationAvg = ConvertLocationAvg(visits, func(v *Visit, u *User) bool {
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       return false
