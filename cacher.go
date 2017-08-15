@@ -276,7 +276,18 @@ func GetCachedPathParamCountry(path, country string) []byte {
   return m[country]
 }
 
-func CachePath(path string, data interface{}) {
+// func CachePath(path string, data interface{}) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPath.Lock()
+//   PathCache[path] = body
+//   mPath.Unlock()
+// }
+
+func CachePathLocation(path string, data *structs.Location) {
   body, err := ffjson.Marshal(data)
   if err != nil {
     log.Println(path)
@@ -287,7 +298,40 @@ func CachePath(path string, data interface{}) {
   mPath.Unlock()
 }
 
-func CachePathParam(path string, data interface{}) {
+func CachePathUser(path string, data *structs.User) {
+  body, err := ffjson.Marshal(data)
+  if err != nil {
+    log.Println(path)
+    return
+  }
+  mPath.Lock()
+  PathCache[path] = body
+  mPath.Unlock()
+}
+
+func CachePathVisit(path string, data *structs.Visit) {
+  body, err := ffjson.Marshal(data)
+  if err != nil {
+    log.Println(path)
+    return
+  }
+  mPath.Lock()
+  PathCache[path] = body
+  mPath.Unlock()
+}
+
+// func CachePathParam(path string, data interface{}) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPathParam.Lock()
+//   PathParamCache[path] = body
+//   mPathParam.Unlock()
+// }
+
+func CachePathParamUserVisits(path string, data *structs.UserVisitsList) {
   body, err := ffjson.Marshal(data)
   if err != nil {
     log.Println(path)
@@ -298,7 +342,34 @@ func CachePathParam(path string, data interface{}) {
   mPathParam.Unlock()
 }
 
-func CachePathParamCountry(path, country string, data interface{}) {
+func CachePathParamLocationAvg(path string, data *structs.LocationAvg) {
+  body, err := ffjson.Marshal(data)
+  if err != nil {
+    log.Println(path)
+    return
+  }
+  mPathParam.Lock()
+  PathParamCache[path] = body
+  mPathParam.Unlock()
+}
+
+// func CachePathParamCountry(path, country string, data interface{}) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPathParamCountry.Lock()
+//   m, ok := PathParamCountryCache[path]
+//   if !ok {
+//     m = map[string][]byte{}
+//     PathParamCountryCache[path] = m
+//   }
+//   m[country] = body
+//   mPathParamCountry.Unlock()
+// }
+
+func CachePathParamCountryUserVisits(path, country string, data *structs.UserVisitsList) {
   body, err := ffjson.Marshal(data)
   if err != nil {
     log.Println(path)
@@ -313,6 +384,7 @@ func CachePathParamCountry(path, country string, data interface{}) {
   m[country] = body
   mPathParamCountry.Unlock()
 }
+
 
 func CacheLocation(id uint32) {
   e := GetLocationSafe(id)
@@ -346,7 +418,7 @@ func CacheLocationResponse(id uint32, e *structs.Location) {
   LocationCache[id] = e
   mLocation.Unlock()
   path := fmt.Sprintf("/locations/%d", id)
-  CachePath(path, e)
+  CachePathLocation(path, e)
 }
 
 func CacheUserResponse(id uint32, e *structs.User) {
@@ -354,7 +426,7 @@ func CacheUserResponse(id uint32, e *structs.User) {
   UserCache[id] = e
   mUser.Unlock()
   path := fmt.Sprintf("/users/%d", id)
-  CachePath(path, e)
+  CachePathUser(path, e)
 }
 
 func CacheVisitResponse(id uint32, e *structs.Visit) {
@@ -362,7 +434,7 @@ func CacheVisitResponse(id uint32, e *structs.Visit) {
   VisitCache[id] = e
   mVisit.Unlock()
   path := fmt.Sprintf("/visits/%d", id)
-  CachePath(path, e)
+  CachePathVisit(path, e)
 }
 
 func CacheUserVisits(id uint32) {
@@ -391,7 +463,7 @@ func CacheUserVisitsResponse(id uint32) {
     return true
   })
   path := fmt.Sprintf("/users/%d/visits", id)
-  CachePathParam(path, userVisits)
+  CachePathParamUserVisits(path, userVisits)
 }
 
 func CacheUserVisitsByCountryResponse(id uint32, country string) {
@@ -400,7 +472,7 @@ func CacheUserVisitsByCountryResponse(id uint32, country string) {
     return true
   })
   path := fmt.Sprintf("/users/%d/visits", id)
-  CachePathParamCountry(path, country, userVisits)
+  CachePathParamCountryUserVisits(path, country, userVisits)
 }
 
 func CacheLocationAvgResponse(id uint32) {
@@ -409,7 +481,7 @@ func CacheLocationAvgResponse(id uint32) {
     return true
   })
   path := fmt.Sprintf("/locations/%d/avg", id)
-  CachePathParam(path, locationAvg)
+  CachePathParamLocationAvg(path, locationAvg)
 }
 
 type VisitsByDate []*structs.Visit
