@@ -8,7 +8,6 @@ import (
 var ErrInvalid = errors.New("invalid")
 
 type Location struct {
-  PK uint32 `json:"-"`
   ID *uint32 `json:"id"`
   Place *string `json:"place"`
   Country *string `json:"country"`
@@ -17,7 +16,6 @@ type Location struct {
 }
 
 type User struct {
-  PK uint32 `json:"-"`
   ID *uint32 `json:"id"`
   Email *string `json:"email"`
   FirstName *string `json:"first_name"`
@@ -28,9 +26,6 @@ type User struct {
 }
 
 type Visit struct {
-  PK uint32 `json:"-"`
-  FKUser uint32 `json:"-"`
-  FKLocation uint32 `json:"-"`
   ID *uint32 `json:"id"`
   Location *uint32 `json:"location"`
   User *uint32 `json:"user"`

@@ -26,9 +26,7 @@ func AddLocationAsync(e *Location) error {
 }
 
 func AddLocationProcess(e *Location) {
-  id := *(e.ID)
-  e.PK = id
-  CacheLocationResponse(id, e)
+  CacheLocationResponse(*(e.ID), e)
 }
 
 func AddUser(e *User) error {
@@ -48,10 +46,8 @@ func AddUserAsync(e *User) error {
 }
 
 func AddUserProcess(e *User) {
-  id := *(e.ID)
-  e.PK = id
   e.Age = e.CalculateAge()
-  CacheUserResponse(id, e)
+  CacheUserResponse(*(e.ID), e)
 }
 
 func AddVisit(e *Visit) error {
@@ -71,13 +67,9 @@ func AddVisitAsync(e *Visit) error {
 }
 
 func AddVisitProcess(e *Visit) {
-  id := *(e.ID)
-  e.PK = id
-  e.FKLocation = *(e.Location)
-  e.FKUser = *(e.User)
-  AddLocationVisit(e.FKLocation, id, 0)
-  AddUserVisit(e.FKUser, id, 0)
-  CacheVisitResponse(id, e)
+  AddLocationVisit(*(e.Location), *(e.ID), 0)
+  AddUserVisit(*(e.User), *(e.ID), 0)
+  CacheVisitResponse(*(e.ID), e)
 }
 
 func UpdateLocation(id uint32, e *Location) error {
@@ -101,10 +93,6 @@ func UpdateLocationProcess(id uint32, e *Location) {
   if se == nil {
     log.Println(id)
     return
-  }
-  if e.ID != nil {
-    se.PK = *(e.ID)
-    se.ID = e.ID
   }
   if e.Place != nil {
     se.Place = e.Place
@@ -142,10 +130,6 @@ func UpdateUserProcess(id uint32, e *User) {
   if se == nil {
     log.Println(id)
     return
-  }
-  if e.ID != nil {
-    se.PK = *(e.ID)
-    se.ID = e.ID
   }
   if e.Email != nil {
     se.Email = e.Email
@@ -188,18 +172,12 @@ func UpdateVisitProcess(id uint32, e *Visit) {
     log.Println(id)
     return
   }
-  oldLocationID := se.FKLocation
-  oldUserID := se.FKUser
-  if e.ID != nil {
-    se.PK = *(e.ID)
-    se.ID = e.ID
-  }
+  oldLocationID := *(se.Location)
+  oldUserID := *(se.User)
   if e.Location != nil {
-    se.FKLocation = *(e.Location)
     se.Location = e.Location
   }
   if e.User != nil {
-    se.FKUser = *(e.User)
     se.User = e.User
   }
   if e.VisitedAt != nil {
@@ -208,11 +186,11 @@ func UpdateVisitProcess(id uint32, e *Visit) {
   if e.Mark != nil {
     se.Mark = e.Mark
   }
-  if se.FKLocation != oldLocationID {
-    AddLocationVisit(se.FKLocation, id, oldLocationID)
+  if *(se.Location) != oldLocationID {
+    AddLocationVisit(*(se.Location), id, oldLocationID)
   }
-  if se.FKUser != oldUserID {
-    AddUserVisit(se.FKUser, id, oldUserID)
+  if *(se.User) != oldUserID {
+    AddUserVisit(*(se.User), id, oldUserID)
   }
   CacheVisitResponse(id, se)
 }

@@ -312,9 +312,9 @@ func (v VisitsByDate) Less(i, j int) bool {
 func ConvertUserVisits(visits []*Visit, filter func(*Visit, *Location) bool) *UserVisitsList {
   userVisits := []*UserVisit{}
   for _, v := range visits {
-    l := GetLocation(v.FKLocation)
+    l := GetLocation(*(v.Location))
     if l == nil {
-      log.Println(v.FKLocation)
+      log.Println(*(v.Location))
       continue
     }
     if !filter(v, l) {
@@ -336,9 +336,9 @@ func ConvertLocationAvg(visits []*Visit, filter func(*Visit, *User) bool) *Locat
   count := 0
   sum := 0
   for _, v := range visits {
-    u := GetUser(v.FKUser)
+    u := GetUser(*(v.User))
     if u == nil {
-      log.Println(v.FKUser)
+      log.Println(*(v.User))
       continue
     }
     if !filter(v, u) {
