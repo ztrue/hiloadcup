@@ -102,7 +102,7 @@ func route(ctx *fasthttp.RequestCtx) {
         return
       }
 
-      if PathExists(path) || IsNewPath(path) {
+      if PathExists(path) /*|| IsNewPath(path)*/ {
         // update
         matches = reLocation.FindStringSubmatch(path)
         if len(matches) > 0 {

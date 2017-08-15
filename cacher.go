@@ -5,8 +5,37 @@ import (
   "fmt"
   "log"
   "sort"
+  "strconv"
   "sync"
 )
+
+// visit ID => location ID
+var LocationsMap = map[uint32]uint32{}
+// visit ID => user ID
+var UsersMap = map[uint32]uint32{}
+
+// location ID => true
+var LocationsList = map[uint32]*Location{}
+// user ID => true
+var UsersList = map[uint32]*User{}
+// visit ID => true
+var VisitsList = map[uint32]*Visit{}
+
+// user ID => visit ID => true
+var UserVisitsMap = map[uint32]map[uint32]bool{}
+// location ID => visit ID => true
+var LocationVisitsMap = map[uint32]map[uint32]bool{}
+
+var NewPaths = map[string]bool{}
+
+var mlm = &sync.Mutex{}
+var mum = &sync.Mutex{}
+var mll = &sync.Mutex{}
+var mul = &sync.Mutex{}
+var mvl = &sync.Mutex{}
+var mnp = &sync.Mutex{}
+var muvm = &sync.Mutex{}
+var mlvm = &sync.Mutex{}
 
 var LocationCache = map[uint32]*Location{}
 var UserCache = map[uint32]*User{}
@@ -44,19 +73,149 @@ func PrepareCache() {
   // }
 }
 
-func LocationExists(id uint32) bool {
-  _, ok := LocationsList[id]
+func AddNewPath(entityType string, id uint32) {
+  path := "/" + entityType + "/" + idToStr(id)
+  mnp.Lock()
+  NewPaths[path] = true
+  mnp.Unlock()
+}
+
+func IsNewPath(path string) bool {
+  _, ok := NewPaths[path]
   return ok
 }
 
-func UserExists(id uint32) bool {
-  _, ok := UsersList[id]
-  return ok
+func AddLocationList(id uint32, e *Location) {
+  mll.Lock()
+  LocationsList[id] = e
+  mll.Unlock()
 }
 
-func VisitExists(id uint32) bool {
-  _, ok := LocationsMap[id]
-  return ok
+func AddUserList(id uint32, e *User) {
+  mul.Lock()
+  UsersList[id] = e
+  mul.Unlock()
+}
+
+func AddVisitList(id uint32, e *Visit) {
+  mvl.Lock()
+  VisitsList[id] = e
+  mvl.Unlock()
+}
+
+func SetVisitLocation(visitID, locationID uint32) {
+  mlm.Lock()
+  LocationsMap[visitID] = locationID
+  mlm.Unlock()
+}
+
+func SetVisitUser(visitID, userID uint32) {
+  mum.Lock()
+  UsersMap[visitID] = userID
+  mum.Unlock()
+}
+
+func GetVisitLocation(visitID uint32) uint32 {
+  return LocationsMap[visitID]
+}
+
+func GetVisitUser(visitID uint32) uint32 {
+  return UsersMap[visitID]
+}
+
+func AddUserVisit(userID, visitID, oldUserID uint32) {
+  muvm.Lock()
+  m, ok := UserVisitsMap[userID]
+  if !ok {
+    m = map[uint32]bool{}
+    UserVisitsMap[userID] = m
+  }
+  m[visitID] = true
+  if oldUserID > 0 {
+    UserVisitsMap[oldUserID][visitID] = false
+  }
+  muvm.Unlock()
+}
+
+func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
+  mlvm.Lock()
+  m, ok := LocationVisitsMap[locationID]
+  if !ok {
+    m = map[uint32]bool{}
+    LocationVisitsMap[locationID] = m
+  }
+  m[visitID] = true
+  if oldLocationID > 0 {
+    LocationVisitsMap[oldLocationID][visitID] = false
+  }
+  mlvm.Unlock()
+}
+
+func GetLocation(id uint32) *Location {
+  mll.Lock()
+  e := LocationsList[id]
+  mll.Unlock()
+  return e
+}
+
+func GetUser(id uint32) *User {
+  mul.Lock()
+  e := UsersList[id]
+  mul.Unlock()
+  return e
+}
+
+func GetVisit(id uint32) *Visit {
+  mvl.Lock()
+  e := VisitsList[id]
+  mvl.Unlock()
+  return e
+}
+
+func GetUserVisitsIDs(userID uint32) []uint32 {
+  ids := []uint32{}
+  for visitID, ok := range UserVisitsMap[userID] {
+    if ok {
+      ids = append(ids, visitID)
+    }
+  }
+  return ids
+}
+
+func GetLocationVisitsIDs(locationID uint32) []uint32 {
+  ids := []uint32{}
+  for visitID, ok := range LocationVisitsMap[locationID] {
+    if ok {
+      ids = append(ids, visitID)
+    }
+  }
+  return ids
+}
+
+func GetUserVisitsEntities(id uint32) []*Visit {
+  visits := []*Visit{}
+  for visitID := range GetUserVisitsIDs(id) {
+    v := GetCachedVisit(id)
+    if v == nil {
+      log.Println(id, visitID)
+      continue
+    }
+    visits = append(visits, v)
+  }
+  return visits
+}
+
+func GetLocationVisitsEntities(id uint32) []*Visit {
+  visits := []*Visit{}
+  for visitID := range GetLocationVisitsIDs(id) {
+    v := GetCachedVisit(id)
+    if v == nil {
+      log.Println(id, visitID)
+      continue
+    }
+    visits = append(visits, v)
+  }
+  return visits
 }
 
 func PathExists(path string) bool {
@@ -120,44 +279,52 @@ func CachePathParam(path string, data interface{}) {
 }
 
 func CacheLocation(id uint32) {
-  e := GetLocation(id, true)
+  e := GetLocation(id)
   if e == nil {
     log.Println(id)
     return
   }
+  CacheLocationEntity(id, e)
+}
+
+func CacheLocationEntity(id uint32, e *Location) {
   LocationCache[id] = e
   path := fmt.Sprintf("/locations/%d", id)
   CachePath(path, e)
 }
 
 func CacheUser(id uint32) {
-  e := GetUser(id, true)
+  e := GetUser(id)
   if e == nil {
     log.Println(id)
     return
   }
+  CacheUserEntity(id, e)
+}
+
+func CacheUserEntity(id uint32, e *User) {
   UserCache[id] = e
   path := fmt.Sprintf("/users/%d", id)
   CachePath(path, e)
 }
 
 func CacheVisit(id uint32) {
-  e := GetVisit(id, true)
+  e := GetVisit(id)
   if e == nil {
     log.Println(id)
     return
   }
+  CacheVisitEntity(id, e)
+}
+
+func CacheVisitEntity(id uint32, e *Visit) {
   VisitCache[id] = e
   path := fmt.Sprintf("/visits/%d", id)
   CachePath(path, e)
 }
 
 func CacheUserVisits(id uint32) {
-  visits := GetAllUserVisits(id)
-  if visits == nil {
-    log.Println(id)
-    return
-  }
+  visits := GetUserVisitsEntities(id)
   UserVisitsCache[id] = visits
   userVisits := ConvertUserVisits(visits, func(v *Visit, l *Location) bool {
     return true
@@ -167,11 +334,7 @@ func CacheUserVisits(id uint32) {
 }
 
 func CacheLocationAvg(id uint32) {
-  visits := GetAllLocationVisits(id)
-  if visits == nil {
-    log.Println(id)
-    return
-  }
+  visits := GetLocationVisitsEntities(id)
   LocationAvgCache[id] = visits
   locationAvg := ConvertLocationAvg(visits, func(v *Visit, u *User) bool {
     return true
@@ -238,4 +401,8 @@ func ConvertLocationAvg(visits []*Visit, filter func(*Visit, *User) bool) *Locat
   return &LocationAvg{
     Avg: float32(avg),
   }
+}
+
+func idToStr(id uint32) string {
+  return strconv.FormatUint(uint64(id), 10)
 }
