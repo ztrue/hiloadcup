@@ -24,7 +24,6 @@ func AddLocationProcess(e *Location) {
   e.PK = id
 
   AddLocationList(id, e)
-  // AddNewPath("locations", id)
   CacheLocationResponse(id, e)
 }
 
@@ -45,7 +44,6 @@ func AddUserProcess(e *User) {
   e.Age = e.CalculateAge()
 
   AddUserList(id, e)
-  // AddNewPath("users", id)
   CacheUserResponse(id, e)
 }
 
@@ -68,7 +66,6 @@ func AddVisitProcess(e *Visit) {
   AddVisitList(id, e)
   AddLocationVisit(e.FKLocation, id, 0)
   AddUserVisit(e.FKUser, id, 0)
-  // AddNewPath("visits", id)
   CacheVisitResponse(id, e)
 }
 

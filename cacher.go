@@ -21,12 +21,9 @@ var UserVisitsMap = map[uint32]map[uint32]bool{}
 // location ID => visit ID => true
 var LocationVisitsMap = map[uint32]map[uint32]bool{}
 
-var NewPaths = map[string]bool{}
-
 var mll = &sync.Mutex{}
 var mul = &sync.Mutex{}
 var mvl = &sync.Mutex{}
-var mnp = &sync.Mutex{}
 var muvm = &sync.Mutex{}
 var mlvm = &sync.Mutex{}
 
@@ -38,6 +35,9 @@ var LocationAvgCache = map[uint32][]*Visit{}
 var PathCache = map[string]*[]byte{}
 var PathParamCache = map[string]*[]byte{}
 
+var mLocation = &sync.Mutex{}
+var mUser = &sync.Mutex{}
+var mVisit = &sync.Mutex{}
 var mPath = &sync.Mutex{}
 var mPathParam = &sync.Mutex{}
 
@@ -57,25 +57,30 @@ func PrepareCache() {
   //     CacheVisit(id)
   //   }
   // }()
-  // TODO
-  for id := range UsersList {
-    CacheUserVisits(id)
-  }
-  for id := range LocationsList {
-    CacheLocationAvg(id)
-  }
-}
-
-func AddNewPath(entityType string, id uint32) {
-  path := "/" + entityType + "/" + idToStr(id)
-  mnp.Lock()
-  NewPaths[path] = true
-  mnp.Unlock()
-}
-
-func IsNewPath(path string) bool {
-  _, ok := NewPaths[path]
-  return ok
+  go func() {
+    log.Println("CacheUserVisits BEGIN")
+    for id := range UsersList {
+      CacheUserVisits(id)
+    }
+    log.Println("CacheUserVisits END")
+    log.Println("CacheUserVisitsResponse BEGIN")
+    for id := range UsersList {
+      CacheUserVisitsResponse(id)
+    }
+    log.Println("CacheUserVisitsResponse END")
+  }()
+  go func() {
+    log.Println("CacheLocationAvg BEGIN")
+    for id := range LocationsList {
+      CacheLocationAvg(id)
+    }
+    log.Println("CacheLocationAvg END")
+    log.Println("CacheLocationAvgResponse BEGIN")
+    for id := range LocationsList {
+      CacheLocationAvgResponse(id)
+    }
+    log.Println("CacheLocationAvgResponse END")
+  }()
 }
 
 func AddLocationList(id uint32, e *Location) {
@@ -265,12 +270,6 @@ func CacheLocation(id uint32) {
   CacheLocationResponse(id, e)
 }
 
-func CacheLocationResponse(id uint32, e *Location) {
-  LocationCache[id] = e
-  path := fmt.Sprintf("/locations/%d", id)
-  CachePath(path, e)
-}
-
 func CacheUser(id uint32) {
   e := GetUser(id)
   if e == nil {
@@ -278,12 +277,6 @@ func CacheUser(id uint32) {
     return
   }
   CacheUserResponse(id, e)
-}
-
-func CacheUserResponse(id uint32, e *User) {
-  UserCache[id] = e
-  path := fmt.Sprintf("/users/%d", id)
-  CachePath(path, e)
 }
 
 func CacheVisit(id uint32) {
@@ -295,15 +288,40 @@ func CacheVisit(id uint32) {
   CacheVisitResponse(id, e)
 }
 
+func CacheLocationResponse(id uint32, e *Location) {
+  mLocation.Lock()
+  LocationCache[id] = e
+  mLocation.Unlock()
+  path := fmt.Sprintf("/locations/%d", id)
+  CachePath(path, e)
+}
+
+func CacheUserResponse(id uint32, e *User) {
+  mUser.Lock()
+  UserCache[id] = e
+  mUser.Unlock()
+  path := fmt.Sprintf("/users/%d", id)
+  CachePath(path, e)
+}
+
 func CacheVisitResponse(id uint32, e *Visit) {
+  mVisit.Lock()
   VisitCache[id] = e
+  mVisit.Unlock()
   path := fmt.Sprintf("/visits/%d", id)
   CachePath(path, e)
 }
 
 func CacheUserVisits(id uint32) {
   visits := GetUserVisitsEntities(id)
+  // No block because it must be prepared in PrepareCache() only
   UserVisitsCache[id] = visits
+}
+
+func CacheLocationAvg(id uint32) {
+  visits := GetLocationVisitsEntities(id)
+  // No block because it must be prepared in PrepareCache() only
+  LocationAvgCache[id] = visits
 }
 
 func CacheUserVisitsResponse(id uint32) {
@@ -313,11 +331,6 @@ func CacheUserVisitsResponse(id uint32) {
   })
   path := fmt.Sprintf("/users/%d/visits", id)
   CachePathParam(path, userVisits)
-}
-
-func CacheLocationAvg(id uint32) {
-  visits := GetLocationVisitsEntities(id)
-  LocationAvgCache[id] = visits
 }
 
 func CacheLocationAvgResponse(id uint32) {
