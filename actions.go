@@ -29,15 +29,13 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args)
   ResponseJSON(ctx, avg)
 }
 
-type DummyResponse struct {}
-
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
   var e *Location
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := AddLocation(e); err != nil {
+  if err := AddLocationAsync(e); err != nil {
     ResponseError(ctx, err)
     return
   }
@@ -50,7 +48,7 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := AddUser(e); err != nil {
+  if err := AddUserAsync(e); err != nil {
     ResponseError(ctx, err)
     return
   }
@@ -63,7 +61,7 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := AddVisit(e); err != nil {
+  if err := AddVisitAsync(e); err != nil {
     ResponseError(ctx, err)
     return
   }
@@ -76,7 +74,7 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := UpdateLocation(id, e); err != nil {
+  if err := UpdateLocationAsync(id, e); err != nil {
     ResponseError(ctx, err)
     return
   }
@@ -89,7 +87,7 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := UpdateUser(id, e); err != nil {
+  if err := UpdateUserAsync(id, e); err != nil {
     ResponseError(ctx, err)
     return
   }
@@ -102,7 +100,7 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := UpdateVisit(id, e); err != nil {
+  if err := UpdateVisitAsync(id, e); err != nil {
     ResponseError(ctx, err)
     return
   }

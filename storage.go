@@ -13,6 +13,14 @@ func AddLocation(e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  AddLocationProcess(e)
+  return nil
+}
+
+func AddLocationAsync(e *Location) error {
+  if err := e.Validate(); err != nil {
+    return ErrBadParams
+  }
   go AddLocationProcess(e)
   return nil
 }
@@ -24,6 +32,14 @@ func AddLocationProcess(e *Location) {
 }
 
 func AddUser(e *User) error {
+  if err := e.Validate(); err != nil {
+    return ErrBadParams
+  }
+  AddUserProcess(e)
+  return nil
+}
+
+func AddUserAsync(e *User) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
@@ -42,6 +58,14 @@ func AddVisit(e *Visit) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
+  AddVisitProcess(e)
+  return nil
+}
+
+func AddVisitAsync(e *Visit) error {
+  if err := e.Validate(); err != nil {
+    return ErrBadParams
+  }
   go AddVisitProcess(e)
   return nil
 }
@@ -57,6 +81,14 @@ func AddVisitProcess(e *Visit) {
 }
 
 func UpdateLocation(id uint32, e *Location) error {
+  if err := e.Validate(); err != nil {
+    return ErrBadParams
+  }
+  UpdateLocationProcess(id, e)
+  return nil
+}
+
+func UpdateLocationAsync(id uint32, e *Location) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
@@ -90,6 +122,14 @@ func UpdateLocationProcess(id uint32, e *Location) {
 }
 
 func UpdateUser(id uint32, e *User) error {
+  if err := e.Validate(); err != nil {
+    return ErrBadParams
+  }
+  UpdateUserProcess(id, e)
+  return nil
+}
+
+func UpdateUserAsync(id uint32, e *User) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
@@ -127,6 +167,14 @@ func UpdateUserProcess(id uint32, e *User) {
 }
 
 func UpdateVisit(id uint32, e *Visit) error {
+  if err := e.Validate(); err != nil {
+    return ErrBadParams
+  }
+  UpdateVisitProcess(id, e)
+  return nil
+}
+
+func UpdateVisitAsync(id uint32, e *Visit) error {
   if err := e.Validate(); err != nil {
     return ErrBadParams
   }
