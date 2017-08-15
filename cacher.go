@@ -9,21 +9,11 @@ import (
   "sort"
 )
 
-// location ID => true
-var LocationsList = map[uint32]*Location{}
-// user ID => true
-var UsersList = map[uint32]*User{}
-// visit ID => true
-var VisitsList = map[uint32]*Visit{}
-
 // user ID => visit ID => true
 var UserVisitsMap = map[uint32]map[uint32]bool{}
 // location ID => visit ID => true
 var LocationVisitsMap = map[uint32]map[uint32]bool{}
 
-var mll = &sync.Mutex{}
-var mul = &sync.Mutex{}
-var mvl = &sync.Mutex{}
 var muvm = &sync.Mutex{}
 var mlvm = &sync.Mutex{}
 
@@ -42,63 +32,30 @@ var mPath = &sync.Mutex{}
 var mPathParam = &sync.Mutex{}
 
 func PrepareCache() {
-  // go func() {
-  //   for id := range LocationsList {
-  //     CacheLocation(id)
-  //   }
-  // }()
-  // go func() {
-  //   for id := range UsersList {
-  //     CacheUser(id)
-  //   }
-  // }()
-  // go func() {
-  //   for id := range VisitsList {
-  //     CacheVisit(id)
-  //   }
-  // }()
   go func() {
     log.Println("CacheUserVisits BEGIN")
-    for id := range UsersList {
+    for id := range UserCache {
       CacheUserVisits(id)
     }
     log.Println("CacheUserVisits END")
     log.Println("CacheUserVisitsResponse BEGIN")
-    for id := range UsersList {
+    for id := range UserCache {
       CacheUserVisitsResponse(id)
     }
     log.Println("CacheUserVisitsResponse END")
   }()
   go func() {
     log.Println("CacheLocationAvg BEGIN")
-    for id := range LocationsList {
+    for id := range LocationCache {
       CacheLocationAvg(id)
     }
     log.Println("CacheLocationAvg END")
     log.Println("CacheLocationAvgResponse BEGIN")
-    for id := range LocationsList {
+    for id := range LocationCache {
       CacheLocationAvgResponse(id)
     }
     log.Println("CacheLocationAvgResponse END")
   }()
-}
-
-func AddLocationList(id uint32, e *Location) {
-  mll.Lock()
-  LocationsList[id] = e
-  mll.Unlock()
-}
-
-func AddUserList(id uint32, e *User) {
-  mul.Lock()
-  UsersList[id] = e
-  mul.Unlock()
-}
-
-func AddVisitList(id uint32, e *Visit) {
-  mvl.Lock()
-  VisitsList[id] = e
-  mvl.Unlock()
 }
 
 func AddUserVisit(userID, visitID, oldUserID uint32) {
@@ -134,35 +91,35 @@ func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
 }
 
 func GetLocation(id uint32) *Location {
-  return LocationsList[id]
+  return LocationCache[id]
 }
 
 func GetUser(id uint32) *User {
-  return UsersList[id]
+  return UserCache[id]
 }
 
 func GetVisit(id uint32) *Visit {
-  return VisitsList[id]
+  return VisitCache[id]
 }
 
 func GetLocationSafe(id uint32) *Location {
-  mll.Lock()
-  e := LocationsList[id]
-  mll.Unlock()
+  mLocation.Lock()
+  e := LocationCache[id]
+  mLocation.Unlock()
   return e
 }
 
 func GetUserSafe(id uint32) *User {
-  mul.Lock()
-  e := UsersList[id]
-  mul.Unlock()
+  mUser.Lock()
+  e := UserCache[id]
+  mUser.Unlock()
   return e
 }
 
 func GetVisitSafe(id uint32) *Visit {
-  mvl.Lock()
-  e := VisitsList[id]
-  mvl.Unlock()
+  mVisit.Lock()
+  e := VisitCache[id]
+  mVisit.Unlock()
   return e
 }
 

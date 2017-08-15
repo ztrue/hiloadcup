@@ -23,7 +23,6 @@ func AddLocationProcess(e *Location) {
   id := *(e.ID)
   e.PK = id
 
-  AddLocationList(id, e)
   CacheLocationResponse(id, e)
 }
 
@@ -43,7 +42,6 @@ func AddUserProcess(e *User) {
 
   e.Age = e.CalculateAge()
 
-  AddUserList(id, e)
   CacheUserResponse(id, e)
 }
 
@@ -63,7 +61,6 @@ func AddVisitProcess(e *Visit) {
   e.FKLocation = *(e.Location)
   e.FKUser = *(e.User)
 
-  AddVisitList(id, e)
   AddLocationVisit(e.FKLocation, id, 0)
   AddUserVisit(e.FKUser, id, 0)
   CacheVisitResponse(id, e)
