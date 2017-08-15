@@ -25,8 +25,6 @@ func main() {
   }
 }
 
-// TODO flusher, ok := w.(http.Flusher); flusher.Flush()
-// TODO sync.Pool
 // TODO Add indexes for param queries
 // TODO Easier age check
 // TODO Check why there is a first long request

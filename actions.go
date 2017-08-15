@@ -1,9 +1,10 @@
 package main
 
 import (
-  "encoding/json"
   "errors"
   "github.com/valyala/fasthttp"
+  "github.com/pquerna/ffjson/ffjson"
+  "app/structs"
 )
 
 var ErrNilParam = errors.New("nil param")
@@ -30,7 +31,7 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args)
 }
 
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
-  var e *Location
+  var e *structs.Location
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
@@ -43,7 +44,7 @@ func ActionNewLocation(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewUser(ctx *fasthttp.RequestCtx) {
-  var e *User
+  var e *structs.User
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
@@ -56,7 +57,7 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewVisit(ctx *fasthttp.RequestCtx) {
-  var e *Visit
+  var e *structs.Visit
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
@@ -69,7 +70,7 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
-  var e *Location
+  var e *structs.Location
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
@@ -82,7 +83,7 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
 }
 
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
-  var e *User
+  var e *structs.User
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
@@ -95,7 +96,7 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
 }
 
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
-  var e *Visit
+  var e *structs.Visit
   if err := checkRequest(ctx, &e); err != nil {
     ResponseStatus(ctx, 400)
     return
@@ -112,7 +113,7 @@ func checkRequest(ctx *fasthttp.RequestCtx, e interface{}) error {
   if err := checkNils(ctx, body); err != nil {
     return err
   }
-  if err := json.Unmarshal(body, e); err != nil {
+  if err := ffjson.Unmarshal(body, e); err != nil {
     return err
   }
   if e == nil {
@@ -123,7 +124,7 @@ func checkRequest(ctx *fasthttp.RequestCtx, e interface{}) error {
 
 func checkNils(ctx *fasthttp.RequestCtx, body []byte) error {
   var m map[string]interface{}
-  if err := json.Unmarshal(body, &m); err != nil {
+  if err := ffjson.Unmarshal(body, &m); err != nil {
     return err
   }
   for _, v := range m {

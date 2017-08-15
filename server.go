@@ -1,12 +1,12 @@
 package main
 
 import (
-  "encoding/json"
   "log"
   "regexp"
   "strconv"
   "time"
   "github.com/valyala/fasthttp"
+  "github.com/pquerna/ffjson/ffjson"
 )
 
 var reLocation *regexp.Regexp
@@ -164,7 +164,7 @@ func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
 
 func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
   ctx.SetStatusCode(200)
-  if err := json.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
+  if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
     log.Println(err, ctx.URI(), data)
     ResponseStatus(ctx, 400)
     return

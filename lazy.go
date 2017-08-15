@@ -4,10 +4,11 @@ import (
   "log"
   "strconv"
   "github.com/valyala/fasthttp"
+  "app/structs"
 )
 
-func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
-  userVisits := &UserVisitsList{}
+func GetUserVisits(id uint32, v *fasthttp.Args) (*structs.UserVisitsList, error) {
+  userVisits := &structs.UserVisitsList{}
   if GetUser(id) == nil {
     return userVisits, ErrNotFound
   }
@@ -34,7 +35,7 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
   hasCountry := v.Has("country")
   if hasCountry {
     country = string(v.Peek("country"))
-    if err := ValidateLength(&country, 50); err != nil {
+    if err := structs.ValidateLength(&country, 50); err != nil {
       return userVisits, ErrBadParams
     }
   }
@@ -48,7 +49,7 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
     }
     toDistance = uint32(toDistance64)
   }
-  var visits []*Visit
+  var visits []*structs.Visit
   if hasCountry {
     visits = GetCachedUserVisitsByCountry(id, country)
   } else {
@@ -58,7 +59,7 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
     log.Println(id)
     return userVisits, ErrInternal
   }
-  userVisits = ConvertUserVisits(visits, func(v *Visit, l *Location) bool {
+  userVisits = ConvertUserVisits(visits, func(v *structs.Visit, l *structs.Location) bool {
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       return false
     }
@@ -76,8 +77,8 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
   return userVisits, nil
 }
 
-func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
-  locationAvg := &LocationAvg{}
+func GetLocationAvg(id uint32, v *fasthttp.Args) (*structs.LocationAvg, error) {
+  locationAvg := &structs.LocationAvg{}
   if GetLocation(id) == nil {
     return locationAvg, ErrNotFound
   }
@@ -122,7 +123,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
   hasGender := v.Has("gender")
   if hasGender {
     gender = string(v.Peek("gender"))
-    if err := ValidateGender(&gender); err != nil {
+    if err := structs.ValidateGender(&gender); err != nil {
       return locationAvg, ErrBadParams
     }
   }
@@ -130,7 +131,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
   // For some reason it's calculated as 3 instead of 0 in tests
   // Dirty hack BEGIN
   if id == 51977 && gender == "f" && toAge == 51 && !hasFromDate && !hasToDate && !hasFromAge {
-    return &LocationAvg{
+    return &structs.LocationAvg{
       Avg: 3,
     }, nil
   }
@@ -141,7 +142,7 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
     log.Println(id)
     return locationAvg, ErrInternal
   }
-  locationAvg = ConvertLocationAvg(visits, func(v *Visit, u *User) bool {
+  locationAvg = ConvertLocationAvg(visits, func(v *structs.Visit, u *structs.User) bool {
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       return false
     }

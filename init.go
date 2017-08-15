@@ -1,9 +1,10 @@
 package main
 
 import (
-  "encoding/json"
   "io/ioutil"
   "log"
+  "github.com/pquerna/ffjson/ffjson"
+  "app/structs"
 )
 
 func Import(src, dst string) error {
@@ -39,15 +40,15 @@ func Parse(filename string) error {
   if err != nil {
     return err
   }
-  payload := Payload{}
-  if err := json.Unmarshal(data, &payload); err != nil {
+  payload := &structs.Payload{}
+  if err := ffjson.Unmarshal(data, payload); err != nil {
     return err
   }
   Save(payload)
   return nil
 }
 
-func Save(payload Payload) {
+func Save(payload *structs.Payload) {
   for _, e := range payload.Locations {
     if err := AddLocation(e); err != nil {
       log.Println(err)

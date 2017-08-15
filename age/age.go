@@ -1,6 +1,6 @@
 // https://github.com/bearbin/go-age/blob/master/age.go
 // Package age allows for easy calculation of the age of an entity, provided with the date of birth of that entity.
-package main
+package age
 
 import "time"
 
