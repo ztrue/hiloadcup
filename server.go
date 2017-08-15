@@ -5,6 +5,7 @@ import (
   "log"
   "regexp"
   "strconv"
+  "time"
   "github.com/valyala/fasthttp"
 )
 
@@ -22,8 +23,21 @@ func Prepare() {
   reLocationAvg = regexp.MustCompile("^/locations/(\\d+)/avg$")
 }
 
+var lastPost = time.Time{}
+
 func Serve(addr string) error {
   Prepare()
+  go func() {
+    for {
+      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 2 {
+        log.Println("CACHE UPDATE BEGIN")
+        PrepareCache()
+        log.Println("CACHE UPDATE END")
+        break
+      }
+      time.Sleep(time.Second)
+    }
+  }()
   log.Println("Server started at " + addr)
   return fasthttp.ListenAndServe(addr, route)
 }
@@ -73,6 +87,7 @@ func route(ctx *fasthttp.RequestCtx) {
         return
       }
     case "POST":
+      lastPost = time.Now()
       // new
       if path == "/locations/new" {
         ActionNewLocation(ctx)

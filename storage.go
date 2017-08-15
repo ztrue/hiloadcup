@@ -149,6 +149,7 @@ func AddLocationProcess(e *Location) {
   t.Commit()
 
   AddLocationList(id)
+  AddNewPath("locations", id)
 }
 
 func AddUser(e *User) error {
@@ -177,6 +178,7 @@ func AddUserProcess(e *User) {
   t.Commit()
 
   AddUserList(id)
+  AddNewPath("users", id)
 }
 
 func AddVisit(e *Visit) error {
@@ -206,6 +208,7 @@ func AddVisitProcess(e *Visit) {
 
   SetVisitLocation(id, e.FKLocation)
   SetVisitUser(id, e.FKUser)
+  AddNewPath("visits", id)
 }
 
 func UpdateLocation(id uint32, e *Location) error {
@@ -477,7 +480,6 @@ func GetAllLocationVisits(id uint32) []*Visit {
     // Dirty hack begin
     cachedLocationID := GetVisitLocation(v.PK)
     if cachedLocationID != id {
-      log.Println(id, v.PK, "skip")
       continue
     }
     // Dirty hack end
@@ -511,7 +513,6 @@ func GetAllUserVisits(id uint32) []*Visit {
     // Dirty hack begin
     cachedUserID := GetVisitUser(v.PK)
     if cachedUserID != id {
-      log.Println(id, v.PK, "skip")
       continue
     }
     // Dirty hack end
