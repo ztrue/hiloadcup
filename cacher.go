@@ -14,9 +14,6 @@ var UserVisitsMap = map[uint32]map[uint32]bool{}
 // location ID => visit ID => true
 var LocationVisitsMap = map[uint32]map[uint32]bool{}
 
-var muvm = &sync.Mutex{}
-var mlvm = &sync.Mutex{}
-
 var LocationCache = map[uint32]*Location{}
 var UserCache = map[uint32]*User{}
 var VisitCache = map[uint32]*Visit{}
@@ -25,6 +22,8 @@ var LocationAvgCache = map[uint32][]*Visit{}
 var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 
+var mUVMap = &sync.Mutex{}
+var mLVMap = &sync.Mutex{}
 var mLocation = &sync.Mutex{}
 var mUser = &sync.Mutex{}
 var mVisit = &sync.Mutex{}
@@ -59,7 +58,7 @@ func PrepareCache() {
 }
 
 func AddUserVisit(userID, visitID, oldUserID uint32) {
-  muvm.Lock()
+  mUVMap.Lock()
   _, ok := UserVisitsMap[userID]
   if ok {
     UserVisitsMap[userID][visitID] = true
@@ -71,11 +70,11 @@ func AddUserVisit(userID, visitID, oldUserID uint32) {
   if oldUserID > 0 {
     UserVisitsMap[oldUserID][visitID] = false
   }
-  muvm.Unlock()
+  mUVMap.Unlock()
 }
 
 func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
-  mlvm.Lock()
+  mLVMap.Lock()
   _, ok := LocationVisitsMap[locationID]
   if ok {
     LocationVisitsMap[locationID][visitID] = true
@@ -87,7 +86,7 @@ func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
   if oldLocationID > 0 {
     LocationVisitsMap[oldLocationID][visitID] = false
   }
-  mlvm.Unlock()
+  mLVMap.Unlock()
 }
 
 func GetLocation(id uint32) *Location {
