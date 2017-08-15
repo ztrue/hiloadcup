@@ -1,13 +1,10 @@
 package main
 
 import (
-  "encoding/json"
   "errors"
   "log"
-  "sort"
   "strconv"
   "sync"
-  "github.com/valyala/fasthttp"
   "github.com/hashicorp/go-memdb"
 )
 
@@ -18,12 +15,20 @@ var ErrBadParams = errors.New("bad params")
 var ErrInternal = errors.New("internal")
 
 // visit ID => location ID
-var locations = map[uint32]uint32{}
+var LocationsMap = map[uint32]uint32{}
 // visit ID => user ID
-var users = map[uint32]uint32{}
+var UsersMap = map[uint32]uint32{}
 
-var ml = &sync.Mutex{}
-var mu = &sync.Mutex{}
+var LocationsList = map[uint32]bool{}
+var UsersList = map[uint32]bool{}
+
+var NewPaths = map[string]bool{}
+
+var mlm = &sync.Mutex{}
+var mum = &sync.Mutex{}
+var mll = &sync.Mutex{}
+var mul = &sync.Mutex{}
+var mnp = &sync.Mutex{}
 
 func PrepareDB() error {
   schema := &memdb.DBSchema{
@@ -68,16 +73,6 @@ func PrepareDB() error {
           },
         },
       },
-      "paths": &memdb.TableSchema{
-        Name: "paths",
-        Indexes: map[string]*memdb.IndexSchema{
-          "id": &memdb.IndexSchema{
-            Name: "id",
-            Unique: true,
-            Indexer: &memdb.StringFieldIndex{Field: "Key"},
-          },
-        },
-      },
     },
   }
 
@@ -86,71 +81,48 @@ func PrepareDB() error {
   return err
 }
 
-type Path struct {
-  Key string
-  Body *[]byte
+func AddNewPath(entityType string, id uint32) {
+  path := "/" + entityType + "/" + idToStr(id)
+  mnp.Lock()
+  NewPaths[path] = true
+  mnp.Unlock()
 }
 
-func CacheSet(key string, body *[]byte) error {
-  t := db.Txn(true)
-  p := Path{key, body}
-  if err := t.Insert("paths", p); err != nil {
-    t.Abort()
-    return err
-  }
-  t.Commit()
-  return nil
+func IsNewPath(path string) bool {
+  _, ok := NewPaths[path]
+  return ok
 }
 
-func CacheGet(key string) (*[]byte, bool) {
-  t := db.Txn(false)
-  defer t.Abort()
-  pi, err := t.First("paths", "id", key)
-  if err != nil {
-    log.Println(key, err)
-    return nil, false
-  }
-  if pi == nil {
-    return nil, false
-  }
-  p, ok := pi.(Path)
-  if !ok {
-    log.Println(key, pi)
-    return nil, false
-  }
-  return p.Body, true
+func AddLocationList(id uint32) {
+  mll.Lock()
+  LocationsList[id] = true
+  mll.Unlock()
 }
 
-func CacheRecord(entityType string, id uint32, e interface{}) {
-  data, err := json.Marshal(e)
-  if err != nil {
-    log.Println(err)
-  } else {
-    key := "/" + entityType + "/" + idToStr(id)
-    if err := CacheSet(key, &data); err != nil {
-      log.Println(err)
-    }
-  }
+func AddUserList(id uint32) {
+  mul.Lock()
+  UsersList[id] = true
+  mul.Unlock()
 }
 
 func SetVisitLocation(visitID, locationID uint32) {
-  ml.Lock()
-  locations[visitID] = locationID
-  ml.Unlock()
+  mlm.Lock()
+  LocationsMap[visitID] = locationID
+  mlm.Unlock()
 }
 
 func SetVisitUser(visitID, userID uint32) {
-  ml.Lock()
-  users[visitID] = userID
-  ml.Unlock()
+  mum.Lock()
+  UsersMap[visitID] = userID
+  mum.Unlock()
 }
 
 func GetVisitLocation(visitID uint32) uint32 {
-  return locations[visitID]
+  return LocationsMap[visitID]
 }
 
 func GetVisitUser(visitID uint32) uint32 {
-  return users[visitID]
+  return UsersMap[visitID]
 }
 
 func AddLocation(e *Location) error {
@@ -176,7 +148,7 @@ func AddLocationProcess(e *Location) {
   }
   t.Commit()
 
-  CacheRecord(entityType, e.PK, e)
+  AddLocationList(id)
 }
 
 func AddUser(e *User) error {
@@ -194,7 +166,7 @@ func AddUserProcess(e *User) {
   id := *(e.ID)
   e.PK = id
 
-  e.Age = e.CalculateAgeEasy()
+  e.Age = e.CalculateAge()
 
   t := db.Txn(true)
   if err := t.Insert(entityType, e); err != nil {
@@ -204,7 +176,7 @@ func AddUserProcess(e *User) {
   }
   t.Commit()
 
-  CacheRecord(entityType, e.PK, e)
+  AddUserList(id)
 }
 
 func AddVisit(e *Visit) error {
@@ -234,8 +206,6 @@ func AddVisitProcess(e *Visit) {
 
   SetVisitLocation(id, e.FKLocation)
   SetVisitUser(id, e.FKUser)
-
-  CacheRecord(entityType, e.PK, e)
 }
 
 func UpdateLocation(id uint32, e *Location) error {
@@ -294,8 +264,6 @@ func UpdateLocationProcess(id uint32, e *Location) {
     return
   }
   t.Commit()
-
-  CacheRecord(entityType, se.PK, se)
 }
 
 func UpdateUser(id uint32, e *User) error {
@@ -349,7 +317,7 @@ func UpdateUserProcess(id uint32, e *User) {
   }
   if e.BirthDate != nil {
     se.BirthDate = e.BirthDate
-    se.Age = e.CalculateAgeEasy()
+    se.Age = e.CalculateAge()
   }
 
   if err := t.Insert(entityType, se); err != nil {
@@ -358,8 +326,6 @@ func UpdateUserProcess(id uint32, e *User) {
     return
   }
   t.Commit()
-
-  CacheRecord(entityType, se.PK, se)
 }
 
 func UpdateVisit(id uint32, e *Visit) error {
@@ -428,8 +394,6 @@ func UpdateVisitProcess(id uint32, e *Visit) {
   if e.User != nil {
     SetVisitUser(id, se.FKUser)
   }
-
-  CacheRecord(entityType, se.PK, se)
 }
 
 func GetLocation(id uint32, must bool) *Location {
@@ -489,173 +453,16 @@ func GetVisit(id uint32, must bool) *Visit {
   return e
 }
 
-type VisitsByDate []UserVisit
-func (v VisitsByDate) Len() int {
-  return len(v)
-}
-func (v VisitsByDate) Swap(i, j int) {
-  v[i], v[j] = v[j], v[i]
-}
-func (v VisitsByDate) Less(i, j int) bool {
-  return *(v[i].VisitedAt) < *(v[j].VisitedAt)
-}
-
-func GetUserVisits(userID uint32, v *fasthttp.Args) ([]UserVisit, error) {
-  userVisits := VisitsByDate{}
-  if GetUser(userID, false) == nil {
-    return userVisits, ErrNotFound
-  }
-  var err error
-  fromDate := 0
-  hasFromDate := v.Has("fromDate")
-  if hasFromDate {
-    fromDateStr := string(v.Peek("fromDate"))
-    fromDate, err = strconv.Atoi(fromDateStr)
-    if err != nil {
-      return userVisits, ErrBadParams
-    }
-  }
-  toDate := 0
-  hasToDate := v.Has("toDate")
-  if hasToDate {
-    toDateStr := string(v.Peek("toDate"))
-    toDate, err = strconv.Atoi(toDateStr)
-    if err != nil {
-      return userVisits, ErrBadParams
-    }
-  }
-  country := ""
-  hasCountry := v.Has("country")
-  if hasCountry {
-    country = string(v.Peek("country"))
-    if err := ValidateLength(&country, 50); err != nil {
-      return userVisits, ErrBadParams
-    }
-  }
-  toDistance := uint32(0)
-  hasToDistance := v.Has("toDistance")
-  if hasToDistance {
-    toDistanceStr := string(v.Peek("toDistance"))
-    toDistance64, err := strconv.ParseUint(toDistanceStr, 10, 32)
-    if err != nil {
-      return userVisits, ErrBadParams
-    }
-    toDistance = uint32(toDistance64)
-  }
-  t := db.Txn(false)
-  iter, err := t.Get("visits", "user", userID)
-  if err != nil {
-    t.Abort()
-    log.Println(userID, err)
-    return userVisits, err
-  }
-  t.Abort()
-  for {
-    vi := iter.Next()
-    if vi == nil {
-      break
-    }
-    v, ok := vi.(*Visit)
-    if !ok {
-      log.Println(userID, vi)
-      return userVisits, ErrInternal
-    }
-
-    // Dirty hack begin
-    cachedUserID := GetVisitUser(*(v.ID))
-    if cachedUserID != userID {
-      log.Println(userID, *(v.ID), "skip")
-      continue
-    }
-    // Dirty hack end
-
-    if hasFromDate && *(v.VisitedAt) <= fromDate {
-      continue
-    }
-    if hasToDate && *(v.VisitedAt) >= toDate {
-      continue
-    }
-    l := GetLocation(*(v.Location), true)
-    if l == nil {
-      log.Println(userID, *v.Location, "location not found")
-      continue
-    }
-    if hasToDistance && *(l.Distance) >= toDistance {
-      continue
-    }
-    if hasCountry && *(l.Country) != country {
-      continue
-    }
-    uv := UserVisit{
-      Mark: v.Mark,
-      VisitedAt: v.VisitedAt,
-      Place: l.Place,
-    }
-    userVisits = append(userVisits, uv)
-  }
-  sort.Sort(userVisits)
-  return userVisits, nil
-}
-
-func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
-  if GetLocation(id, false) == nil {
-    return 0, ErrNotFound
-  }
-  var err error
-  fromDate := 0
-  hasFromDate := v.Has("fromDate")
-  if hasFromDate {
-    fromDateStr := string(v.Peek("fromDate"))
-    fromDate, err = strconv.Atoi(fromDateStr)
-    if err != nil {
-      return 0, ErrBadParams
-    }
-  }
-  toDate := 0
-  hasToDate := v.Has("toDate")
-  if hasToDate {
-    toDateStr := string(v.Peek("toDate"))
-    toDate, err = strconv.Atoi(toDateStr)
-    if err != nil {
-      return 0, ErrBadParams
-    }
-  }
-  fromAge := 0
-  hasFromAge := v.Has("fromAge")
-  if hasFromAge {
-    fromAgeStr := string(v.Peek("fromAge"))
-    fromAge, err = strconv.Atoi(fromAgeStr)
-    if err != nil {
-      return 0, ErrBadParams
-    }
-  }
-  toAge := 0
-  hasToAge := v.Has("toAge")
-  if hasToAge {
-    toAgeStr := string(v.Peek("toAge"))
-    toAge, err = strconv.Atoi(toAgeStr)
-    if err != nil {
-      return 0, ErrBadParams
-    }
-  }
-  gender := ""
-  hasGender := v.Has("gender")
-  if hasGender {
-    gender = string(v.Peek("gender"))
-    if err := ValidateGender(&gender); err != nil {
-      return 0, ErrBadParams
-    }
-  }
+func GetAllLocationVisits(id uint32) []*Visit {
   t := db.Txn(false)
   iter, err := t.Get("visits", "location", id)
   if err != nil {
     t.Abort()
     log.Println(id, err)
-    return 0, err
+    return nil
   }
   t.Abort()
-  count := 0
-  sum := 0
+  visits := []*Visit{}
   for {
     vi := iter.Next()
     if vi == nil {
@@ -664,45 +471,54 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (float32, error) {
     v, ok := vi.(*Visit)
     if !ok {
       log.Println(id, vi)
-      return 0, ErrInternal
+      return nil
     }
 
     // Dirty hack begin
-    cachedLocationID := GetVisitLocation(*(v.ID))
+    cachedLocationID := GetVisitLocation(v.PK)
     if cachedLocationID != id {
-      log.Println(id, *(v.ID), "skip")
+      log.Println(id, v.PK, "skip")
       continue
     }
     // Dirty hack end
 
-    if hasFromDate && *(v.VisitedAt) <= fromDate {
-      continue
-    }
-    if hasToDate && *(v.VisitedAt) >= toDate {
-      continue
-    }
-    u := GetUser(*(v.User), true)
-    if u == nil {
-      log.Println(id, *(v.User), "user not found")
-      continue
-    }
-    if hasGender && *(u.Gender) != gender {
-      continue
-    }
-    if hasFromAge && u.Age < fromAge {
-      continue
-    }
-    if hasToAge && u.Age >= toAge {
-      continue
-    }
-    count++
-    sum += *(v.Mark)
+    visits = append(visits, v)
   }
-  if count == 0 {
-    return 0, nil
+  return visits
+}
+
+func GetAllUserVisits(id uint32) []*Visit {
+  t := db.Txn(false)
+  iter, err := t.Get("visits", "user", id)
+  if err != nil {
+    t.Abort()
+    log.Println(id, err)
+    return nil
   }
-  avg := Round(float64(sum) / float64(count), .5, 5)
-  return float32(avg), nil
+  t.Abort()
+  visits := []*Visit{}
+  for {
+    vi := iter.Next()
+    if vi == nil {
+      break
+    }
+    v, ok := vi.(*Visit)
+    if !ok {
+      log.Println(id, vi)
+      return nil
+    }
+
+    // Dirty hack begin
+    cachedUserID := GetVisitUser(v.PK)
+    if cachedUserID != id {
+      log.Println(id, v.PK, "skip")
+      continue
+    }
+    // Dirty hack end
+
+    visits = append(visits, v)
+  }
+  return visits
 }
 
 func idToStr(id uint32) string {

@@ -44,6 +44,14 @@ type UserVisit struct {
   Place *string `json:"place"`
 }
 
+type LocationAvg struct {
+  Avg float32 `json:"avg"`
+}
+
+type UserVisitsList struct {
+  Visits []*UserVisit `json:"visits"`
+}
+
 type Payload struct {
   Locations []*Location `json:"locations"`
   Users []*User `json:"users"`

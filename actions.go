@@ -9,21 +9,13 @@ import (
 var ErrNilParam = errors.New("nil param")
 var ErrEmptyEntity = errors.New("empty entity")
 
-type UserVisitsResponse struct {
-  Visits []UserVisit `json:"visits"`
-}
-
 func ActionGetUserVisits(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
   visits, err := GetUserVisits(id, v)
   if err != nil {
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, UserVisitsResponse{visits})
-}
-
-type LocationAvgResponse struct {
-  Avg float32 `json:"avg"`
+  ResponseJSON(ctx, visits)
 }
 
 func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
@@ -32,7 +24,7 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args)
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, LocationAvgResponse{avg})
+  ResponseJSON(ctx, avg)
 }
 
 type DummyResponse struct {}

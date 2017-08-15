@@ -34,23 +34,41 @@ func route(ctx *fasthttp.RequestCtx) {
 
   switch string(ctx.Method()) {
     case "GET":
-      cached, ok := CacheGet(path)
-      if ok {
+      cached := GetCachedPath(path)
+      if cached != nil {
         ResponseBytes(ctx, cached)
         return
       }
 
       matches = reUserVisits.FindStringSubmatch(path)
       if len(matches) > 0 {
-        id := parseID(matches[1])
+        if !PathParamExists(path) {
+          ResponseStatus(ctx, 404)
+          return
+        }
         v := ctx.URI().QueryArgs()
+        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("country") && !v.Has("toDistance") {
+          cached := GetCachedPathParam(path)
+          ResponseBytes(ctx, cached)
+          return
+        }
+        id := parseID(matches[1])
         ActionGetUserVisits(ctx, id, v)
         return
       }
       matches = reLocationAvg.FindStringSubmatch(path)
       if len(matches) > 0 {
-        id := parseID(matches[1])
+        if !PathParamExists(path) {
+          ResponseStatus(ctx, 404)
+          return
+        }
         v := ctx.URI().QueryArgs()
+        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
+          cached := GetCachedPathParam(path)
+          ResponseBytes(ctx, cached)
+          return
+        }
+        id := parseID(matches[1])
         ActionGetLocationAvg(ctx, id, v)
         return
       }
@@ -69,8 +87,7 @@ func route(ctx *fasthttp.RequestCtx) {
         return
       }
 
-      _, ok := CacheGet(path)
-      if ok {
+      if PathExists(path) || IsNewPath(path) {
         // update
         matches = reLocation.FindStringSubmatch(path)
         if len(matches) > 0 {

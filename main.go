@@ -21,6 +21,8 @@ func main() {
   if err := Import(archivePath, dataPath); err != nil {
     log.Fatal(err)
   }
+  log.Println("CACHE")
+  PrepareCache()
   log.Println("SERVE")
   if err := Serve(httpAddr); err != nil {
     log.Fatal(err)
@@ -37,3 +39,4 @@ func main() {
 // TODO Try async POST
 // TODO Remove logs
 // TODO Cache UserVisits when POST
+// TODO Cache avg and user visits without params
