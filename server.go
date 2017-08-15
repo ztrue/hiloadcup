@@ -61,13 +61,24 @@ func route(ctx *fasthttp.RequestCtx) {
           return
         }
         v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("country") && !v.Has("toDistance") {
-          cached := GetCachedPathParam(path)
-          if cached == nil {
-            log.Println(path)
+        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
+          if !v.Has("country") {
+            cached := GetCachedPathParam(path)
+            if cached == nil {
+              log.Println(path)
+            } else {
+              ResponseBytes(ctx, cached)
+              return
+            }
           } else {
-            ResponseBytes(ctx, cached)
-            return
+            country := string(v.Peek("country"))
+            cached := GetCachedPathParamCountry(path, country)
+            if cached == nil {
+              log.Println(path)
+            } else {
+              ResponseBytes(ctx, cached)
+              return
+            }
           }
         }
         id := parseID(matches[1])

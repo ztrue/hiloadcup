@@ -24,6 +24,7 @@ var UserVisitsByCountryCache = map[uint32]map[string][]*Visit{}
 var LocationAvgCache = map[uint32][]*Visit{}
 var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
+var PathParamCountryCache = map[string]map[string][]byte{}
 
 var mUVMap = &sync.Mutex{}
 var mLVMap = &sync.Mutex{}
@@ -33,6 +34,7 @@ var mUser = &sync.Mutex{}
 var mVisit = &sync.Mutex{}
 var mPath = &sync.Mutex{}
 var mPathParam = &sync.Mutex{}
+var mPathParamCountry = &sync.Mutex{}
 
 func PrepareCache() {
   go func() {
@@ -58,13 +60,13 @@ func PrepareCache() {
     }
     log.Println("CacheUserVisitsByCountry END")
 
-    // log.Println("CacheUserVisitsByCountryResponse BEGIN")
-    // for id := range UserCache {
-    //   for country := range Countries {
-    //     CacheUserVisitsByCountryResponse(id, country)
-    //   }
-    // }
-    // log.Println("CacheUserVisitsByCountryResponse END")
+    log.Println("CacheUserVisitsByCountryResponse BEGIN")
+    for id := range UserCache {
+      for country := range Countries {
+        CacheUserVisitsByCountryResponse(id, country)
+      }
+    }
+    log.Println("CacheUserVisitsByCountryResponse END")
   }()
 
   go func() {
@@ -232,6 +234,15 @@ func PathParamExists(path string) bool {
   return ok
 }
 
+func PathParamCountryExists(path, country string) bool {
+  m, ok := PathParamCountryCache[path]
+  if !ok {
+    return false
+  }
+  _, ok = m[country]
+  return ok
+}
+
 func GetCachedUserVisits(id uint32) []*Visit {
   return UserVisitsCache[id]
 }
@@ -256,6 +267,14 @@ func GetCachedPathParam(path string) []byte {
   return PathParamCache[path]
 }
 
+func GetCachedPathParamCountry(path, country string) []byte {
+  m, ok := PathParamCountryCache[path]
+  if !ok {
+    return nil
+  }
+  return m[country]
+}
+
 func CachePath(path string, data interface{}) {
   body, err := json.Marshal(data)
   if err != nil {
@@ -276,6 +295,22 @@ func CachePathParam(path string, data interface{}) {
   mPathParam.Lock()
   PathParamCache[path] = body
   mPathParam.Unlock()
+}
+
+func CachePathParamCountry(path, country string, data interface{}) {
+  body, err := json.Marshal(data)
+  if err != nil {
+    log.Println(path)
+    return
+  }
+  mPathParamCountry.Lock()
+  m, ok := PathParamCountryCache[path]
+  if !ok {
+    m = map[string][]byte{}
+    PathParamCountryCache[path] = m
+  }
+  m[country] = body
+  mPathParamCountry.Unlock()
 }
 
 func CacheLocation(id uint32) {
@@ -356,6 +391,15 @@ func CacheUserVisitsResponse(id uint32) {
   })
   path := fmt.Sprintf("/users/%d/visits", id)
   CachePathParam(path, userVisits)
+}
+
+func CacheUserVisitsByCountryResponse(id uint32, country string) {
+  visits := GetCachedUserVisitsByCountry(id, country)
+  userVisits := ConvertUserVisits(visits, func(v *Visit, l *Location) bool {
+    return true
+  })
+  path := fmt.Sprintf("/users/%d/visits", id)
+  CachePathParamCountry(path, country, userVisits)
 }
 
 func CacheLocationAvgResponse(id uint32) {
