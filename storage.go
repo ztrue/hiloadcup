@@ -26,6 +26,7 @@ func AddLocationAsync(e *Location) error {
 }
 
 func AddLocationProcess(e *Location) {
+  AddCountry(*(e.Country))
   CacheLocationResponse(*(e.ID), e)
 }
 

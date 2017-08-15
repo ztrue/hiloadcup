@@ -14,16 +14,20 @@ var UserVisitsMap = map[uint32]map[uint32]bool{}
 // location ID => visit ID => true
 var LocationVisitsMap = map[uint32]map[uint32]bool{}
 
+var Countries = map[string]bool{}
+
 var LocationCache = map[uint32]*Location{}
 var UserCache = map[uint32]*User{}
 var VisitCache = map[uint32]*Visit{}
 var UserVisitsCache = map[uint32][]*Visit{}
+var UserVisitsByCountryCache = map[uint32]map[string][]*Visit{}
 var LocationAvgCache = map[uint32][]*Visit{}
 var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 
 var mUVMap = &sync.Mutex{}
 var mLVMap = &sync.Mutex{}
+var mCountries = &sync.Mutex{}
 var mLocation = &sync.Mutex{}
 var mUser = &sync.Mutex{}
 var mVisit = &sync.Mutex{}
@@ -37,24 +41,51 @@ func PrepareCache() {
       CacheUserVisits(id)
     }
     log.Println("CacheUserVisits END")
+
     log.Println("CacheUserVisitsResponse BEGIN")
     for id := range UserCache {
       CacheUserVisitsResponse(id)
     }
     log.Println("CacheUserVisitsResponse END")
   }()
+
+  go func() {
+    log.Println("CacheUserVisitsByCountry BEGIN")
+    for id := range UserCache {
+      for country := range Countries {
+        CacheUserVisitsByCountry(id, country)
+      }
+    }
+    log.Println("CacheUserVisitsByCountry END")
+
+    // log.Println("CacheUserVisitsByCountryResponse BEGIN")
+    // for id := range UserCache {
+    //   for country := range Countries {
+    //     CacheUserVisitsByCountryResponse(id, country)
+    //   }
+    // }
+    // log.Println("CacheUserVisitsByCountryResponse END")
+  }()
+
   go func() {
     log.Println("CacheLocationAvg BEGIN")
     for id := range LocationCache {
       CacheLocationAvg(id)
     }
     log.Println("CacheLocationAvg END")
+
     log.Println("CacheLocationAvgResponse BEGIN")
     for id := range LocationCache {
       CacheLocationAvgResponse(id)
     }
     log.Println("CacheLocationAvgResponse END")
   }()
+}
+
+func AddCountry(country string) {
+  mCountries.Lock()
+  Countries[country] = true
+  mCountries.Unlock()
 }
 
 func AddUserVisit(userID, visitID, oldUserID uint32) {
@@ -156,6 +187,28 @@ func GetUserVisitsEntities(id uint32) []*Visit {
   return visits
 }
 
+func GetUserVisitsEntitiesByCountry(id uint32, country string) []*Visit {
+  visits := VisitsByDate{}
+  for _, visitID := range GetUserVisitsIDs(id) {
+    v := GetVisit(visitID)
+    if v == nil {
+      log.Println(id, country, visitID)
+      continue
+    }
+    l := GetLocation(*(v.Location))
+    if v == nil {
+      log.Println(id, country, visitID, *(v.Location))
+      continue
+    }
+    if *(l.Country) != country {
+      continue
+    }
+    visits = append(visits, v)
+  }
+  sort.Sort(visits)
+  return visits
+}
+
 func GetLocationVisitsEntities(id uint32) []*Visit {
   visits := []*Visit{}
   for _, visitID := range GetLocationVisitsIDs(id) {
@@ -181,6 +234,14 @@ func PathParamExists(path string) bool {
 
 func GetCachedUserVisits(id uint32) []*Visit {
   return UserVisitsCache[id]
+}
+
+func GetCachedUserVisitsByCountry(id uint32, country string) []*Visit {
+  m, ok := UserVisitsByCountryCache[id]
+  if !ok {
+    return nil
+  }
+  return m[country]
 }
 
 func GetCachedLocationAvg(id uint32) []*Visit {
@@ -269,15 +330,23 @@ func CacheVisitResponse(id uint32, e *Visit) {
 }
 
 func CacheUserVisits(id uint32) {
-  visits := GetUserVisitsEntities(id)
   // No block because it must be prepared in PrepareCache() only
-  UserVisitsCache[id] = visits
+  UserVisitsCache[id] = GetUserVisitsEntities(id)
+}
+
+func CacheUserVisitsByCountry(id uint32, country string) {
+  m, ok := UserVisitsByCountryCache[id]
+  if !ok {
+    m = map[string][]*Visit{}
+    UserVisitsByCountryCache[id] = m
+  }
+  // No block because it must be prepared in PrepareCache() only
+  m[country] = GetUserVisitsEntitiesByCountry(id, country)
 }
 
 func CacheLocationAvg(id uint32) {
-  visits := GetLocationVisitsEntities(id)
   // No block because it must be prepared in PrepareCache() only
-  LocationAvgCache[id] = visits
+  LocationAvgCache[id] = GetLocationVisitsEntities(id)
 }
 
 func CacheUserVisitsResponse(id uint32) {
