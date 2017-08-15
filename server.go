@@ -7,6 +7,7 @@ import (
   "time"
   "github.com/valyala/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
+  "app/structs"
 )
 
 var reLocation *regexp.Regexp
@@ -162,7 +163,27 @@ func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
   ctx.SetConnectionClose()
 }
 
-func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
+// func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
+//   ctx.SetStatusCode(200)
+//   if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
+//     log.Println(err, ctx.URI(), data)
+//     ResponseStatus(ctx, 400)
+//     return
+//   }
+//   ctx.SetConnectionClose()
+// }
+
+func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsList) {
+  ctx.SetStatusCode(200)
+  if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
+    log.Println(err, ctx.URI(), data)
+    ResponseStatus(ctx, 400)
+    return
+  }
+  ctx.SetConnectionClose()
+}
+
+func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg) {
   ctx.SetStatusCode(200)
   if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
     log.Println(err, ctx.URI(), data)

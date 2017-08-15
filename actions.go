@@ -18,7 +18,7 @@ func ActionGetUserVisits(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) 
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, visits)
+  ResponseJSONUserVisits(ctx, visits)
 }
 
 func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
@@ -27,7 +27,7 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args)
     ResponseError(ctx, err)
     return
   }
-  ResponseJSON(ctx, avg)
+  ResponseJSONLocationAvg(ctx, avg)
 }
 
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
