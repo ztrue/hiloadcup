@@ -138,28 +138,21 @@ func (u *User) Validate() error {
       return err
     }
   }
-  // if u.BirthDate != nil {
-  //   if err := ValidateBirthDate(u.BirthDate); err != nil {
-  //     return err
-  //   }
-  // }
   return nil
 }
 
-func (u *User) CalculateAgeEasy() int {
-  if u == nil {
-    return 0
-  }
-  // Seconds in year 365.24 * 24 * 60 * 60 = 31556736
-  return (int(time.Now().Unix()) - *(u.BirthDate)) / 31556736
+func (u *User) CalculateAge() int {
+  return u.CalculateAge1()
 }
 
-func (u *User) CalculateAge() int {
-  if u == nil {
-    return 0
-  }
+func (u *User) CalculateAge1() int {
   bd := time.Unix(int64(*(u.BirthDate)), 0)
   return Age(bd)
+}
+
+func (u *User) CalculateAge2() int {
+  // Seconds in year 365.24 * 24 * 60 * 60 = 31556736
+  return (int(time.Now().Unix()) - *(u.BirthDate)) / 31556736
 }
 
 func (v *Visit) Validate() error {
@@ -171,10 +164,5 @@ func (v *Visit) Validate() error {
       return err
     }
   }
-  // if v.VisitedAt != nil {
-  //   if err := ValidateVisitedAt(v.VisitedAt); err != nil {
-  //     return err
-  //   }
-  // }
   return nil
 }
