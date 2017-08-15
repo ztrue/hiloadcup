@@ -134,20 +134,32 @@ func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
 }
 
 func GetLocation(id uint32) *Location {
+  return LocationsList[id]
+}
+
+func GetUser(id uint32) *User {
+  return UsersList[id]
+}
+
+func GetVisit(id uint32) *Visit {
+  return VisitsList[id]
+}
+
+func GetLocationSafe(id uint32) *Location {
   mll.Lock()
   e := LocationsList[id]
   mll.Unlock()
   return e
 }
 
-func GetUser(id uint32) *User {
+func GetUserSafe(id uint32) *User {
   mul.Lock()
   e := UsersList[id]
   mul.Unlock()
   return e
 }
 
-func GetVisit(id uint32) *Visit {
+func GetVisitSafe(id uint32) *Visit {
   mvl.Lock()
   e := VisitsList[id]
   mvl.Unlock()
@@ -177,7 +189,7 @@ func GetLocationVisitsIDs(locationID uint32) []uint32 {
 func GetUserVisitsEntities(id uint32) []*Visit {
   visits := VisitsByDate{}
   for _, visitID := range GetUserVisitsIDs(id) {
-    v := GetCachedVisit(visitID)
+    v := GetVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
@@ -191,7 +203,7 @@ func GetUserVisitsEntities(id uint32) []*Visit {
 func GetLocationVisitsEntities(id uint32) []*Visit {
   visits := []*Visit{}
   for _, visitID := range GetLocationVisitsIDs(id) {
-    v := GetCachedVisit(visitID)
+    v := GetVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
@@ -209,18 +221,6 @@ func PathExists(path string) bool {
 func PathParamExists(path string) bool {
   _, ok := PathParamCache[path]
   return ok
-}
-
-func GetCachedLocation(id uint32) *Location {
-  return LocationCache[id]
-}
-
-func GetCachedUser(id uint32) *User {
-  return UserCache[id]
-}
-
-func GetCachedVisit(id uint32) *Visit {
-  return VisitCache[id]
 }
 
 func GetCachedUserVisits(id uint32) []*Visit {
@@ -262,7 +262,7 @@ func CachePathParam(path string, data interface{}) {
 }
 
 func CacheLocation(id uint32) {
-  e := GetLocation(id)
+  e := GetLocationSafe(id)
   if e == nil {
     log.Println(id)
     return
@@ -271,7 +271,7 @@ func CacheLocation(id uint32) {
 }
 
 func CacheUser(id uint32) {
-  e := GetUser(id)
+  e := GetUserSafe(id)
   if e == nil {
     log.Println(id)
     return
@@ -280,7 +280,7 @@ func CacheUser(id uint32) {
 }
 
 func CacheVisit(id uint32) {
-  e := GetVisit(id)
+  e := GetVisitSafe(id)
   if e == nil {
     log.Println(id)
     return
@@ -356,7 +356,7 @@ func (v VisitsByDate) Less(i, j int) bool {
 func ConvertUserVisits(visits []*Visit, filter func(*Visit, *Location) bool) *UserVisitsList {
   userVisits := []*UserVisit{}
   for _, v := range visits {
-    l := GetCachedLocation(v.FKLocation)
+    l := GetLocation(v.FKLocation)
     if l == nil {
       log.Println(v.FKLocation)
       continue
@@ -380,7 +380,7 @@ func ConvertLocationAvg(visits []*Visit, filter func(*Visit, *User) bool) *Locat
   count := 0
   sum := 0
   for _, v := range visits {
-    u := GetCachedUser(v.FKUser)
+    u := GetUser(v.FKUser)
     if u == nil {
       log.Println(v.FKUser)
       continue

@@ -8,7 +8,7 @@ import (
 
 func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
   userVisits := &UserVisitsList{}
-  if GetCachedUser(id) == nil {
+  if GetUser(id) == nil {
     return userVisits, ErrNotFound
   }
   var err error
@@ -73,7 +73,7 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*UserVisitsList, error) {
 
 func GetLocationAvg(id uint32, v *fasthttp.Args) (*LocationAvg, error) {
   locationAvg := &LocationAvg{}
-  if GetCachedLocation(id) == nil {
+  if GetLocation(id) == nil {
     return locationAvg, ErrNotFound
   }
   var err error

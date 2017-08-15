@@ -33,6 +33,4 @@ func main() {
 // TODO Check why there is a first long request
 // TODO Use ffjson
 // TODO Try async POST
-// TODO Remove logs
 // TODO Cache UserVisits when POST
-// TODO Cache avg and user visits without params

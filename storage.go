@@ -80,7 +80,7 @@ func UpdateLocation(id uint32, e *Location) error {
 }
 
 func UpdateLocationProcess(id uint32, e *Location) {
-  se := GetLocation(id)
+  se := GetLocationSafe(id)
   if se == nil {
     log.Println(id)
     return
@@ -117,7 +117,7 @@ func UpdateUser(id uint32, e *User) error {
 }
 
 func UpdateUserProcess(id uint32, e *User) {
-  se := GetUser(id)
+  se := GetUserSafe(id)
   if se == nil {
     log.Println(id)
     return
@@ -158,7 +158,7 @@ func UpdateVisit(id uint32, e *Visit) error {
 }
 
 func UpdateVisitProcess(id uint32, e *Visit) {
-  se := GetVisit(id)
+  se := GetVisitSafe(id)
   if se == nil {
     log.Println(id)
     return

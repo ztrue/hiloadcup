@@ -163,8 +163,11 @@ func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
 
 func ResponseBytes(ctx *fasthttp.RequestCtx, body *[]byte) {
   ctx.SetStatusCode(200)
-  ctx.SetBody(*body)
+  b := fasthttp.AcquireByteBuffer()
+  b.Write(*body)
+  ctx.SetBody(b.B)
   ctx.SetConnectionClose()
+  fasthttp.ReleaseByteBuffer(b)
 }
 
 func parseID(str string) uint32 {
