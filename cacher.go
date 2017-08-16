@@ -225,18 +225,18 @@ func GetLocationVisitsEntities(id uint32) []*structs.Visit {
   return visits
 }
 
-func PathExists(path string) bool {
-  _, ok := PathCache[path]
+func PathExists(path []byte) bool {
+  _, ok := PathCache[string(path)]
   return ok
 }
 
-func PathParamExists(path string) bool {
-  _, ok := PathParamCache[path]
+func PathParamExists(path []byte) bool {
+  _, ok := PathParamCache[string(path)]
   return ok
 }
 
-// func PathParamCountryExists(path, country string) bool {
-//   m, ok := PathParamCountryCache[path]
+// func PathParamCountryExists(path []byte, country string) bool {
+//   m, ok := PathParamCountryCache[string(path)]
 //   if !ok {
 //     return false
 //   }
@@ -260,20 +260,20 @@ func GetCachedLocationAvg(id uint32) []*structs.Visit {
   return LocationAvgCache[id]
 }
 
-func GetCachedPath(path string) []byte {
-  return PathCache[path]
+func GetCachedPath(path []byte) []byte {
+  return PathCache[string(path)]
 }
 
-func GetCachedPathParam(path string) []byte {
-  return PathParamCache[path]
+func GetCachedPathParam(path []byte) []byte {
+  return PathParamCache[string(path)]
 }
 
-// func GetCachedPathParamCountry(path, country string) []byte {
-//   m, ok := PathParamCountryCache[path]
+// func GetCachedPathParamCountry(path, country []byte) []byte {
+//   m, ok := PathParamCountryCache[string(path)]
 //   if !ok {
 //     return nil
 //   }
-//   return m[country]
+//   return m[string(country)]
 // }
 
 // func CachePath(path string, data interface{}) {

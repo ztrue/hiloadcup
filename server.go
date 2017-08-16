@@ -16,6 +16,13 @@ var reVisit *regexp.Regexp
 var reUserVisits *regexp.Regexp
 var reLocationAvg *regexp.Regexp
 
+var methodGet = []byte("GET")
+var methodPost = []byte("POST")
+
+var routeNewLocation = []byte("/locations/new")
+var routeNewUser = []byte("/users/new")
+var routeNewViewer = []byte("/viewers/new")
+
 func Prepare() {
   reLocation = regexp.MustCompile("^/locations/(\\d+)$")
   reUser = regexp.MustCompile("^/users/(\\d+)$")
@@ -44,103 +51,94 @@ func Serve(addr string) error {
 }
 
 func route(ctx *fasthttp.RequestCtx) {
-  matches := []string{}
-  path := string(ctx.Path())
-
-  switch string(ctx.Method()) {
-    case "GET":
-      cached := GetCachedPath(path)
+  switch ctx.Method() {
+    case methodGet:
+      cached := GetCachedPath(ctx.Path())
       if cached != nil {
         ResponseBytes(ctx, cached)
         return
       }
 
-      matches = reUserVisits.FindStringSubmatch(path)
+      matches := reUserVisits.FindSubmatch(ctx.Path())
       if len(matches) > 0 {
-        if !PathParamExists(path) {
+        if !PathParamExists(ctx.Path()) {
           ResponseStatus(ctx, 404)
           return
         }
         v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country"){
+        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
         // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
         //   if !v.Has("country") {
-            cached := GetCachedPathParam(path)
+            cached := GetCachedPathParam(ctx.Path())
             if cached == nil {
-              log.Println(path)
+              log.Println(string(ctx.Path()))
             } else {
               ResponseBytes(ctx, cached)
               return
             }
           // } else {
-          //   country := string(v.Peek("country"))
-          //   cached := GetCachedPathParamCountry(path, country)
+          //   cached := GetCachedPathParamCountry(ctx.Path(), v.Peek("country"))
           //   if cached == nil {
-          //     log.Println(path)
+          //     log.Println(string(ctx.Path()))
           //   } else {
           //     ResponseBytes(ctx, cached)
           //     return
           //   }
           // }
         }
-        id := parseID(matches[1])
-        ActionGetUserVisits(ctx, id, v)
+        ActionGetUserVisits(ctx, matches[1], v)
         return
       }
-      matches = reLocationAvg.FindStringSubmatch(path)
+      matches = reLocationAvg.FindSubmatch(ctx.Path())
       if len(matches) > 0 {
-        if !PathParamExists(path) {
+        if !PathParamExists(ctx.Path()) {
           ResponseStatus(ctx, 404)
           return
         }
         v := ctx.URI().QueryArgs()
         if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
-          cached := GetCachedPathParam(path)
+          cached := GetCachedPathParam(ctx.Path())
           if cached == nil {
-            log.Println(path)
+            log.Println(string(ctx.Path()))
           } else {
             ResponseBytes(ctx, cached)
             return
           }
         }
-        id := parseID(matches[1])
-        ActionGetLocationAvg(ctx, id, v)
+        ActionGetLocationAvg(ctx, matches[1], v)
         return
       }
-    case "POST":
+    case methodPost:
       lastPost = time.Now()
       // new
-      if path == "/locations/new" {
+      if ctx.Path() == routeNewLocation {
         ActionNewLocation(ctx)
         return
       }
-      if path == "/users/new" {
+      if ctx.Path() == routeNewUser {
         ActionNewUser(ctx)
         return
       }
-      if path == "/visits/new" {
+      if ctx.Path() == routeNewViewer {
         ActionNewVisit(ctx)
         return
       }
 
-      if PathExists(path) {
+      if PathExists(ctx.Path()) {
         // update
-        matches = reLocation.FindStringSubmatch(path)
+        matches := reLocation.FindSubmatch(ctx.Path())
         if len(matches) > 0 {
-          id := parseID(matches[1])
-          ActionUpdateLocation(ctx, id)
+          ActionUpdateLocation(ctx, matches[1])
           return
         }
-        matches = reUser.FindStringSubmatch(path)
+        matches = reUser.FindSubmatch(ctx.Path())
         if len(matches) > 0 {
-          id := parseID(matches[1])
-          ActionUpdateUser(ctx, id)
+          ActionUpdateUser(ctx, matches[1])
           return
         }
-        matches = reVisit.FindStringSubmatch(path)
+        matches = reVisit.FindSubmatch(ctx.Path())
         if len(matches) > 0 {
-          id := parseID(matches[1])
-          ActionUpdateVisit(ctx, id)
+          ActionUpdateVisit(ctx, matches[1])
           return
         }
       }
