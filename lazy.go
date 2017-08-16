@@ -49,12 +49,12 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*structs.UserVisitsList, error)
     }
     toDistance = uint32(toDistance64)
   }
-  var visits []*structs.Visit
-  if hasCountry {
-    visits = GetCachedUserVisitsByCountry(id, country)
-  } else {
-    visits = GetCachedUserVisits(id)
-  }
+  // var visits []*structs.Visit
+  // if hasCountry {
+  //   visits = GetCachedUserVisitsByCountry(id, country)
+  // } else {
+    visits := GetCachedUserVisits(id)
+  // }
   if visits == nil {
     log.Println(id)
     return userVisits, ErrInternal

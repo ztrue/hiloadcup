@@ -30,3 +30,4 @@ func main() {
 // TODO Check why there is a first long request
 // TODO Use ffjson
 // TODO Cache UserVisits when POST
+// TODO Fix countries index

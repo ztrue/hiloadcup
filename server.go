@@ -62,8 +62,9 @@ func route(ctx *fasthttp.RequestCtx) {
           return
         }
         v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
-          if !v.Has("country") {
+        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country"){
+        // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
+        //   if !v.Has("country") {
             cached := GetCachedPathParam(path)
             if cached == nil {
               log.Println(path)
@@ -71,16 +72,16 @@ func route(ctx *fasthttp.RequestCtx) {
               ResponseBytes(ctx, cached)
               return
             }
-          } else {
-            country := string(v.Peek("country"))
-            cached := GetCachedPathParamCountry(path, country)
-            if cached == nil {
-              log.Println(path)
-            } else {
-              ResponseBytes(ctx, cached)
-              return
-            }
-          }
+          // } else {
+          //   country := string(v.Peek("country"))
+          //   cached := GetCachedPathParamCountry(path, country)
+          //   if cached == nil {
+          //     log.Println(path)
+          //   } else {
+          //     ResponseBytes(ctx, cached)
+          //     return
+          //   }
+          // }
         }
         id := parseID(matches[1])
         ActionGetUserVisits(ctx, id, v)
