@@ -6,7 +6,6 @@ import (
   "log"
 )
 
-var archivePath = "/tmp/data/data.zip"
 var dataPath = "/tmp/unzip"
 
 var httpAddr = ":80"
@@ -14,7 +13,7 @@ var httpAddr = ":80"
 func main() {
   log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile | log.LUTC)
   log.Println("IMPORT")
-  if err := Import(archivePath, dataPath); err != nil {
+  if err := Import(dataPath); err != nil {
     log.Fatal(err)
   }
   log.Println("CACHE")

@@ -7,14 +7,14 @@ import (
   "app/structs"
 )
 
-func Import(src, dst string) error {
-  files, err := Unzip(src, dst)
+func Import(path string) error {
+  files, err := ioutil.ReadDir(path)
   if err != nil {
     return err
   }
-  for _, filename := range files {
-    if err := Parse(filename); err != nil {
-      log.Fatal(err)
+  for _, f := range files {
+    if err := Parse(path + "/" + f.Name()); err != nil {
+      return err
     }
   }
   return nil
