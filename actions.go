@@ -3,6 +3,8 @@ package main
 import (
   "bytes"
   "errors"
+  "log"
+  "strconv"
   "github.com/valyala/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
@@ -14,8 +16,8 @@ var ErrEmptyEntity = errors.New("empty entity")
 var dummyResponse = []byte("{}")
 var nullRequest = []byte("\": null")
 
-func ActionGetUserVisits(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
-  visits, err := GetUserVisits(id, v)
+func ActionGetUserVisits(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args) {
+  visits, err := GetUserVisits(parseID(bid), v)
   if err != nil {
     ResponseError(ctx, err)
     return
@@ -23,8 +25,8 @@ func ActionGetUserVisits(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) 
   ResponseJSONUserVisits(ctx, visits)
 }
 
-func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, id uint32, v *fasthttp.Args) {
-  avg, err := GetLocationAvg(id, v)
+func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args) {
+  avg, err := GetLocationAvg(parseID(bid), v)
   if err != nil {
     ResponseError(ctx, err)
     return
@@ -71,39 +73,39 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
   ResponseBytes(ctx, dummyResponse)
 }
 
-func ActionUpdateLocation(ctx *fasthttp.RequestCtx, id uint32) {
+func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
   e := &structs.Location{}
   if err := checkRequestLocation(ctx, e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := UpdateLocationAsync(id, e); err != nil {
+  if err := UpdateLocationAsync(parseID(bid), e); err != nil {
     ResponseError(ctx, err)
     return
   }
   ResponseBytes(ctx, dummyResponse)
 }
 
-func ActionUpdateUser(ctx *fasthttp.RequestCtx, id uint32) {
+func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
   e := &structs.User{}
   if err := checkRequestUser(ctx, e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := UpdateUserAsync(id, e); err != nil {
+  if err := UpdateUserAsync(parseID(bid), e); err != nil {
     ResponseError(ctx, err)
     return
   }
   ResponseBytes(ctx, dummyResponse)
 }
 
-func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
+func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
   e := &structs.Visit{}
   if err := checkRequestVisit(ctx, e); err != nil {
     ResponseStatus(ctx, 400)
     return
   }
-  if err := UpdateVisitAsync(id, e); err != nil {
+  if err := UpdateVisitAsync(parseID(bid), e); err != nil {
     ResponseError(ctx, err)
     return
   }
@@ -111,11 +113,10 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
 }
 
 // func checkRequest(ctx *fasthttp.RequestCtx, e interface{}) error {
-//   body := ctx.PostBody()
-//   if err := checkNils(ctx, body); err != nil {
+//   if err := checkNils(ctx, ctx.PostBody()); err != nil {
 //     return err
 //   }
-//   if err := ffjson.Unmarshal(body, e); err != nil {
+//   if err := ffjson.Unmarshal(ctx.PostBody(), e); err != nil {
 //     return err
 //   }
 //   if e == nil {
@@ -125,11 +126,10 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, id uint32) {
 // }
 
 func checkRequestLocation(ctx *fasthttp.RequestCtx, e *structs.Location) error {
-  body := ctx.PostBody()
-  if err := checkNils(ctx, body); err != nil {
+  if err := checkNils(ctx, ctx.PostBody()); err != nil {
     return err
   }
-  if err := ffjson.Unmarshal(body, e); err != nil {
+  if err := ffjson.Unmarshal(ctx.PostBody(), e); err != nil {
     return err
   }
   if e == nil {
@@ -139,11 +139,10 @@ func checkRequestLocation(ctx *fasthttp.RequestCtx, e *structs.Location) error {
 }
 
 func checkRequestUser(ctx *fasthttp.RequestCtx, e *structs.User) error {
-  body := ctx.PostBody()
-  if err := checkNils(ctx, body); err != nil {
+  if err := checkNils(ctx, ctx.PostBody()); err != nil {
     return err
   }
-  if err := ffjson.Unmarshal(body, e); err != nil {
+  if err := ffjson.Unmarshal(ctx.PostBody(), e); err != nil {
     return err
   }
   if e == nil {
@@ -153,11 +152,10 @@ func checkRequestUser(ctx *fasthttp.RequestCtx, e *structs.User) error {
 }
 
 func checkRequestVisit(ctx *fasthttp.RequestCtx, e *structs.Visit) error {
-  body := ctx.PostBody()
-  if err := checkNils(ctx, body); err != nil {
+  if err := checkNils(ctx, ctx.PostBody()); err != nil {
     return err
   }
-  if err := ffjson.Unmarshal(body, e); err != nil {
+  if err := ffjson.Unmarshal(ctx.PostBody(), e); err != nil {
     return err
   }
   if e == nil {
@@ -182,4 +180,13 @@ func checkNils(ctx *fasthttp.RequestCtx, body []byte) error {
   //   }
   // }
   // return nil
+}
+
+func parseID(b []byte) uint32 {
+  id64, err := strconv.ParseUint(string(b), 10, 32)
+  if err != nil {
+    log.Println(err)
+    return 0
+  }
+  return uint32(id64)
 }

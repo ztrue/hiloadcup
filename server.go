@@ -1,9 +1,9 @@
 package main
 
 import (
+  "bytes"
   "log"
   "regexp"
-  "strconv"
   "time"
   "github.com/valyala/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
@@ -40,7 +40,6 @@ func Serve(addr string) error {
       if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
         log.Println("CACHE UPDATE BEGIN")
         PrepareCache()
-        log.Println("CACHE UPDATE END")
         break
       }
       time.Sleep(time.Second)
@@ -51,52 +50,23 @@ func Serve(addr string) error {
 }
 
 func route(ctx *fasthttp.RequestCtx) {
-  switch ctx.Method() {
-    case methodGet:
-      cached := GetCachedPath(ctx.Path())
-      if cached != nil {
-        ResponseBytes(ctx, cached)
-        return
-      }
+  if bytes.Equal(ctx.Method(), methodGet) {
+    cached := GetCachedPath(ctx.Path())
+    if cached != nil {
+      ResponseBytes(ctx, cached)
+      return
+    }
 
-      matches := reUserVisits.FindSubmatch(ctx.Path())
-      if len(matches) > 0 {
-        if !PathParamExists(ctx.Path()) {
-          ResponseStatus(ctx, 404)
-          return
-        }
-        v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
-        // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
-        //   if !v.Has("country") {
-            cached := GetCachedPathParam(ctx.Path())
-            if cached == nil {
-              log.Println(string(ctx.Path()))
-            } else {
-              ResponseBytes(ctx, cached)
-              return
-            }
-          // } else {
-          //   cached := GetCachedPathParamCountry(ctx.Path(), v.Peek("country"))
-          //   if cached == nil {
-          //     log.Println(string(ctx.Path()))
-          //   } else {
-          //     ResponseBytes(ctx, cached)
-          //     return
-          //   }
-          // }
-        }
-        ActionGetUserVisits(ctx, matches[1], v)
+    matches := reUserVisits.FindSubmatch(ctx.Path())
+    if len(matches) > 0 {
+      if !PathParamExists(ctx.Path()) {
+        ResponseStatus(ctx, 404)
         return
       }
-      matches = reLocationAvg.FindSubmatch(ctx.Path())
-      if len(matches) > 0 {
-        if !PathParamExists(ctx.Path()) {
-          ResponseStatus(ctx, 404)
-          return
-        }
-        v := ctx.URI().QueryArgs()
-        if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
+      v := ctx.URI().QueryArgs()
+      if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
+      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
+      //   if !v.Has("country") {
           cached := GetCachedPathParam(ctx.Path())
           if cached == nil {
             log.Println(string(ctx.Path()))
@@ -104,44 +74,72 @@ func route(ctx *fasthttp.RequestCtx) {
             ResponseBytes(ctx, cached)
             return
           }
+        // } else {
+        //   cached := GetCachedPathParamCountry(ctx.Path(), v.Peek("country"))
+        //   if cached == nil {
+        //     log.Println(string(ctx.Path()))
+        //   } else {
+        //     ResponseBytes(ctx, cached)
+        //     return
+        //   }
+        // }
+      }
+      ActionGetUserVisits(ctx, matches[1], v)
+      return
+    }
+    matches = reLocationAvg.FindSubmatch(ctx.Path())
+    if len(matches) > 0 {
+      if !PathParamExists(ctx.Path()) {
+        ResponseStatus(ctx, 404)
+        return
+      }
+      v := ctx.URI().QueryArgs()
+      if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
+        cached := GetCachedPathParam(ctx.Path())
+        if cached == nil {
+          log.Println(string(ctx.Path()))
+        } else {
+          ResponseBytes(ctx, cached)
+          return
         }
-        ActionGetLocationAvg(ctx, matches[1], v)
-        return
       }
-    case methodPost:
-      lastPost = time.Now()
-      // new
-      if ctx.Path() == routeNewLocation {
-        ActionNewLocation(ctx)
-        return
-      }
-      if ctx.Path() == routeNewUser {
-        ActionNewUser(ctx)
-        return
-      }
-      if ctx.Path() == routeNewViewer {
-        ActionNewVisit(ctx)
-        return
-      }
+      ActionGetLocationAvg(ctx, matches[1], v)
+      return
+    }
+  } else {
+    lastPost = time.Now()
+    // new
+    if bytes.Equal(ctx.Path(), routeNewLocation) {
+      ActionNewLocation(ctx)
+      return
+    }
+    if bytes.Equal(ctx.Path(), routeNewUser) {
+      ActionNewUser(ctx)
+      return
+    }
+    if bytes.Equal(ctx.Path(), routeNewViewer) {
+      ActionNewVisit(ctx)
+      return
+    }
 
-      if PathExists(ctx.Path()) {
-        // update
-        matches := reLocation.FindSubmatch(ctx.Path())
-        if len(matches) > 0 {
-          ActionUpdateLocation(ctx, matches[1])
-          return
-        }
-        matches = reUser.FindSubmatch(ctx.Path())
-        if len(matches) > 0 {
-          ActionUpdateUser(ctx, matches[1])
-          return
-        }
-        matches = reVisit.FindSubmatch(ctx.Path())
-        if len(matches) > 0 {
-          ActionUpdateVisit(ctx, matches[1])
-          return
-        }
+    if PathExists(ctx.Path()) {
+      // update
+      matches := reLocation.FindSubmatch(ctx.Path())
+      if len(matches) > 0 {
+        ActionUpdateLocation(ctx, matches[1])
+        return
       }
+      matches = reUser.FindSubmatch(ctx.Path())
+      if len(matches) > 0 {
+        ActionUpdateUser(ctx, matches[1])
+        return
+      }
+      matches = reVisit.FindSubmatch(ctx.Path())
+      if len(matches) > 0 {
+        ActionUpdateVisit(ctx, matches[1])
+        return
+      }
+    }
   }
 
   ResponseStatus(ctx, 404)
@@ -196,12 +194,4 @@ func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
   ctx.SetBody(body)
   ctx.SetConnectionClose()
-}
-
-func parseID(str string) uint32 {
-  id64, err := strconv.ParseUint(str, 10, 32)
-  if err != nil {
-    log.Fatal(err)
-  }
-  return uint32(id64)
 }
