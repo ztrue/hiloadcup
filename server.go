@@ -96,7 +96,7 @@ func route(ctx *fasthttp.RequestCtx) {
           return
         }
       }
-      ActionGetLocationAvg(ctx, path[8:len(path) - 4], v)
+      ActionGetLocationAvg(ctx, path[11:len(path) - 4], v)
       return
     }
   } else {
