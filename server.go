@@ -121,11 +121,11 @@ func route(ctx *fasthttp.RequestCtx) {
         return
       }
       if bytes.HasPrefix(path, routeUserPrefix) {
-        ActionUpdateLocation(ctx, path[7:])
+        ActionUpdateUser(ctx, path[7:])
         return
       }
       if bytes.HasPrefix(path, routeVisitPrefix) {
-        ActionUpdateLocation(ctx, path[8:])
+        ActionUpdateVisit(ctx, path[8:])
         return
       }
     }
