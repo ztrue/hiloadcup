@@ -4,22 +4,19 @@ import (
   "log"
 )
 
-var dataPath = "/tmp/unzip"
-
-var httpAddr = ":80"
-
 func main() {
   log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile | log.LUTC)
+
   log.Println("IMPORT")
-  if err := Import(dataPath); err != nil {
+  if err := Import("/tmp/unzip"); err != nil {
     log.Fatal(err)
   }
+
   log.Println("CACHE")
   PrepareCache()
+
   log.Println("SERVE")
-  if err := Serve(httpAddr); err != nil {
-    log.Fatal(err)
-  }
+  log.Fatal(Serve(":80"))
 }
 
 // TODO Add indexes for param queries
