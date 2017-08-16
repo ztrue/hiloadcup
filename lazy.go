@@ -1,51 +1,47 @@
 package main
 
 import (
-  "log"
   "strconv"
   "github.com/valyala/fasthttp"
   "app/structs"
 )
 
-func GetUserVisits(id uint32, v *fasthttp.Args) (*structs.UserVisitsList, error) {
-  userVisits := &structs.UserVisitsList{}
+func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) {
+  id := ParseID(bid)
   if GetUser(id) == nil {
-    return userVisits, ErrNotFound
+    return nil, 404
   }
   var err error
   fromDate := 0
   hasFromDate := v.Has("fromDate")
   if hasFromDate {
-    fromDateStr := string(v.Peek("fromDate"))
-    fromDate, err = strconv.Atoi(fromDateStr)
+    fromDate, err = strconv.Atoi(string(v.Peek("fromDate")))
     if err != nil {
-      return userVisits, ErrBadParams
+      return nil, 400
     }
   }
   toDate := 0
   hasToDate := v.Has("toDate")
   if hasToDate {
-    toDateStr := string(v.Peek("toDate"))
-    toDate, err = strconv.Atoi(toDateStr)
+    toDate, err = strconv.Atoi(string(v.Peek("toDate")))
     if err != nil {
-      return userVisits, ErrBadParams
+      return nil, 400
     }
   }
   country := ""
   hasCountry := v.Has("country")
   if hasCountry {
     country = string(v.Peek("country"))
-    if err := structs.ValidateLength(&country, 50); err != nil {
-      return userVisits, ErrBadParams
+    if structs.ValidateLength(&country, 50) != 200 {
+      return nil, 400
     }
   }
   toDistance := uint32(0)
   hasToDistance := v.Has("toDistance")
   if hasToDistance {
-    toDistanceStr := string(v.Peek("toDistance"))
-    toDistance64, err := strconv.ParseUint(toDistanceStr, 10, 32)
+    toDistance64, err := strconv.ParseUint(string(v.Peek("toDistance")), 10, 32)
     if err != nil {
-      return userVisits, ErrBadParams
+      return nil, 400
     }
     toDistance = uint32(toDistance64)
   }
@@ -53,13 +49,9 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*structs.UserVisitsList, error)
   // if hasCountry {
   //   visits = GetCachedUserVisitsByCountry(id, country)
   // } else {
-    visits := GetCachedUserVisits(id)
+  //  visits = GetCachedUserVisits(id)
   // }
-  if visits == nil {
-    log.Println(id)
-    return userVisits, ErrInternal
-  }
-  userVisits = ConvertUserVisits(visits, func(v *structs.Visit, l *structs.Location) bool {
+  return ConvertUserVisits(GetCachedUserVisits(id), func(v *structs.Visit, l *structs.Location) bool {
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       return false
     }
@@ -73,67 +65,57 @@ func GetUserVisits(id uint32, v *fasthttp.Args) (*structs.UserVisitsList, error)
       return false
     }
     return true
-  })
-  return userVisits, nil
+  }), 200
 }
 
-func GetLocationAvg(id uint32, v *fasthttp.Args) (*structs.LocationAvg, error) {
-  locationAvg := &structs.LocationAvg{}
+func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
+  id := ParseID(bid)
   if GetLocation(id) == nil {
-    return locationAvg, ErrNotFound
+    return nil, 404
   }
   var err error
   fromDate := 0
   hasFromDate := v.Has("fromDate")
   if hasFromDate {
-    fromDateStr := string(v.Peek("fromDate"))
-    fromDate, err = strconv.Atoi(fromDateStr)
+    fromDate, err = strconv.Atoi(string(v.Peek("fromDate")))
     if err != nil {
-      return locationAvg, ErrBadParams
+      return nil, 400
     }
   }
   toDate := 0
   hasToDate := v.Has("toDate")
   if hasToDate {
-    toDateStr := string(v.Peek("toDate"))
-    toDate, err = strconv.Atoi(toDateStr)
+    toDate, err = strconv.Atoi(string(v.Peek("toDate")))
     if err != nil {
-      return locationAvg, ErrBadParams
+      return nil, 400
     }
   }
   fromAge := 0
   hasFromAge := v.Has("fromAge")
   if hasFromAge {
-    fromAgeStr := string(v.Peek("fromAge"))
-    fromAge, err = strconv.Atoi(fromAgeStr)
+    fromAge, err = strconv.Atoi(string(v.Peek("fromAge")))
     if err != nil {
-      return locationAvg, ErrBadParams
+      return nil, 400
     }
   }
   toAge := 0
   hasToAge := v.Has("toAge")
   if hasToAge {
-    toAgeStr := string(v.Peek("toAge"))
-    toAge, err = strconv.Atoi(toAgeStr)
+    toAge, err = strconv.Atoi(string(v.Peek("toAge")))
     if err != nil {
-      return locationAvg, ErrBadParams
+      return nil, 400
     }
   }
   gender := ""
   hasGender := v.Has("gender")
   if hasGender {
     gender = string(v.Peek("gender"))
-    if err := structs.ValidateGender(&gender); err != nil {
-      return locationAvg, ErrBadParams
+    if structs.ValidateGender(&gender) != 200 {
+      return nil, 400
     }
   }
 
-  visits := GetCachedLocationAvg(id)
-  if visits == nil {
-    log.Println(id)
-    return locationAvg, ErrInternal
-  }
-  locationAvg = ConvertLocationAvg(visits, func(v *structs.Visit, u *structs.User) bool {
+  return ConvertLocationAvg(GetCachedLocationAvg(id), func(v *structs.Visit, u *structs.User) bool {
     if hasFromDate && *(v.VisitedAt) <= fromDate {
       return false
     }
@@ -150,6 +132,5 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*structs.LocationAvg, error) {
       return false
     }
     return true
-  })
-  return locationAvg, nil
+  }), 200
 }

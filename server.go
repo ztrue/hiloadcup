@@ -3,38 +3,28 @@ package main
 import (
   "bytes"
   "log"
-  "regexp"
   "time"
   "github.com/valyala/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
 )
 
-var reLocation *regexp.Regexp
-var reUser *regexp.Regexp
-var reVisit *regexp.Regexp
-var reUserVisits *regexp.Regexp
-var reLocationAvg *regexp.Regexp
-
 var methodGet = []byte("GET")
 var methodPost = []byte("POST")
 
 var routeNewLocation = []byte("/locations/new")
 var routeNewUser = []byte("/users/new")
-var routeNewViewer = []byte("/viewers/new")
+var routeNewVisit = []byte("/visits/new")
 
-func Prepare() {
-  reLocation = regexp.MustCompile("^/locations/(\\d+)$")
-  reUser = regexp.MustCompile("^/users/(\\d+)$")
-  reVisit = regexp.MustCompile("^/visits/(\\d+)$")
-  reUserVisits = regexp.MustCompile("^/users/(\\d+)/visits$")
-  reLocationAvg = regexp.MustCompile("^/locations/(\\d+)/avg$")
-}
+var routeLocationPrefix = []byte("/locations/")
+var routeUserPrefix = []byte("/users/")
+var routeVisitPrefix = []byte("/visits/")
+var routeVisitsSuffix = []byte("/visits")
+var routeAvgSuffix = []byte("/avg")
 
 var lastPost = time.Time{}
 
 func Serve(addr string) error {
-  Prepare()
   go func() {
     for {
       if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
@@ -50,93 +40,92 @@ func Serve(addr string) error {
 }
 
 func route(ctx *fasthttp.RequestCtx) {
+  path := ctx.Path()
+
   if bytes.Equal(ctx.Method(), methodGet) {
-    cached := GetCachedPath(ctx.Path())
+    cached := GetCachedPath(path)
     if cached != nil {
       ResponseBytes(ctx, cached)
       return
     }
 
-    matches := reUserVisits.FindSubmatch(ctx.Path())
-    if len(matches) > 0 {
-      if !PathParamExists(ctx.Path()) {
+    if bytes.HasSuffix(path, routeVisitsSuffix) {
+      if !PathParamExists(path) {
         ResponseStatus(ctx, 404)
         return
       }
+
       v := ctx.URI().QueryArgs()
       if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
       // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
       //   if !v.Has("country") {
-          cached := GetCachedPathParam(ctx.Path())
+          cached := GetCachedPathParam(path)
           if cached == nil {
-            log.Println(string(ctx.Path()))
+            log.Println(string(path))
           } else {
             ResponseBytes(ctx, cached)
             return
           }
         // } else {
-        //   cached := GetCachedPathParamCountry(ctx.Path(), v.Peek("country"))
+        //   cached := GetCachedPathParamCountry(path, v.Peek("country"))
         //   if cached == nil {
-        //     log.Println(string(ctx.Path()))
+        //     log.Println(string(path))
         //   } else {
         //     ResponseBytes(ctx, cached)
         //     return
         //   }
         // }
       }
-      ActionGetUserVisits(ctx, matches[1], v)
+      ActionGetUserVisits(ctx, path[7:len(path) - 7], v)
       return
     }
-    matches = reLocationAvg.FindSubmatch(ctx.Path())
-    if len(matches) > 0 {
-      if !PathParamExists(ctx.Path()) {
+
+    if bytes.HasSuffix(path, routeAvgSuffix) {
+      if !PathParamExists(path) {
         ResponseStatus(ctx, 404)
         return
       }
+
       v := ctx.URI().QueryArgs()
       if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
-        cached := GetCachedPathParam(ctx.Path())
+        cached := GetCachedPathParam(path)
         if cached == nil {
-          log.Println(string(ctx.Path()))
+          log.Println(string(path))
         } else {
           ResponseBytes(ctx, cached)
           return
         }
       }
-      ActionGetLocationAvg(ctx, matches[1], v)
+      ActionGetLocationAvg(ctx, path[8:len(path) - 4], v)
       return
     }
   } else {
     lastPost = time.Now()
-    // new
-    if bytes.Equal(ctx.Path(), routeNewLocation) {
+
+    if bytes.Equal(path, routeNewLocation) {
       ActionNewLocation(ctx)
       return
     }
-    if bytes.Equal(ctx.Path(), routeNewUser) {
+    if bytes.Equal(path, routeNewUser) {
       ActionNewUser(ctx)
       return
     }
-    if bytes.Equal(ctx.Path(), routeNewViewer) {
+    if bytes.Equal(path, routeNewVisit) {
       ActionNewVisit(ctx)
       return
     }
 
-    if PathExists(ctx.Path()) {
-      // update
-      matches := reLocation.FindSubmatch(ctx.Path())
-      if len(matches) > 0 {
-        ActionUpdateLocation(ctx, matches[1])
+    if PathExists(path) {
+      if bytes.HasPrefix(path, routeLocationPrefix) {
+        ActionUpdateLocation(ctx, path[11:])
         return
       }
-      matches = reUser.FindSubmatch(ctx.Path())
-      if len(matches) > 0 {
-        ActionUpdateUser(ctx, matches[1])
+      if bytes.HasPrefix(path, routeUserPrefix) {
+        ActionUpdateLocation(ctx, path[7:])
         return
       }
-      matches = reVisit.FindSubmatch(ctx.Path())
-      if len(matches) > 0 {
-        ActionUpdateVisit(ctx, matches[1])
+      if bytes.HasPrefix(path, routeVisitPrefix) {
+        ActionUpdateLocation(ctx, path[8:])
         return
       }
     }
@@ -145,35 +134,20 @@ func route(ctx *fasthttp.RequestCtx) {
   ResponseStatus(ctx, 404)
 }
 
-func ResponseError(ctx *fasthttp.RequestCtx, err error) {
-  status := 500
-  if err == ErrNotFound {
-    status = 404
-  } else if err == ErrBadParams {
-    status = 400
-  }
-  ResponseStatus(ctx, status)
-}
-
 func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
   ctx.SetStatusCode(status)
   ctx.SetConnectionClose()
 }
 
-// func ResponseJSON(ctx *fasthttp.RequestCtx, data interface{}) {
-//   ctx.SetStatusCode(200)
-//   if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
-//     log.Println(err, ctx.URI(), data)
-//     ResponseStatus(ctx, 400)
-//     return
-//   }
-//   ctx.SetConnectionClose()
-// }
+func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
+  ctx.SetStatusCode(200)
+  ctx.SetBody(body)
+  ctx.SetConnectionClose()
+}
 
 func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsList) {
   ctx.SetStatusCode(200)
-  if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
-    log.Println(err, ctx.URI(), data)
+  if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
     ResponseStatus(ctx, 400)
     return
   }
@@ -182,16 +156,9 @@ func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsLi
 
 func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg) {
   ctx.SetStatusCode(200)
-  if err := ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data); err != nil {
-    log.Println(err, ctx.URI(), data)
+  if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
     ResponseStatus(ctx, 400)
     return
   }
-  ctx.SetConnectionClose()
-}
-
-func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
-  ctx.SetStatusCode(200)
-  ctx.SetBody(body)
   ctx.SetConnectionClose()
 }

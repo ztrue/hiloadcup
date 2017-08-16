@@ -1,11 +1,8 @@
 package structs
 
 import (
-  "errors"
   "time"
 )
-
-var ErrInvalid = errors.New("invalid")
 
 type Location struct {
   ID *uint32 `json:"id"`
@@ -53,87 +50,63 @@ type Payload struct {
   Visits []*Visit `json:"visits"`
 }
 
-func ValidateAge(age *int) error {
-  return ValidateRange(age, 18, 87)
-}
-
-func ValidateBirthDate(ts *int) error {
-  // 1930-01-01 ... 1999-01-01
-  return ValidateRange(ts, -1262304000, 915148800)
-}
-
-func ValidateGender(g *string) error {
+func ValidateGender(g *string) int {
   if g == nil || *g != "m" && *g != "f" {
-    return ErrInvalid
+    return 400
   }
-  return nil
+  return 200
 }
 
-func ValidateMark(mark *int) error {
+func ValidateMark(mark *int) int {
   return ValidateRange(mark, 0, 5)
 }
 
-func ValidateVisitedAt(ts *int) error {
-  // 2000-01-01 ... 2015-01-01
-  return ValidateRange(ts, 946684800, 1420070400)
-}
-
-func ValidateLength(str *string, l int) error {
+func ValidateLength(str *string, l int) int {
   if str == nil || len(*str) > l {
-    return ErrInvalid
+    return 400
   }
-  return nil
+  return 200
 }
 
-func ValidateRange(val *int, from, to int) error {
+func ValidateRange(val *int, from, to int) int {
   if val == nil || *val < from || *val > to {
-    return ErrInvalid
+    return 400
   }
-  return nil
+  return 200
 }
 
-func (l *Location) Validate() error {
-  if l == nil {
-    return ErrInvalid
-  }
+func (l *Location) Validate() int {
   if l.Country != nil {
-    if err := ValidateLength(l.Country, 50); err != nil {
-      return err
+    if ValidateLength(l.Country, 50) != 200 {
+      return 200
     }
   }
   if l.City != nil {
-    if  err := ValidateLength(l.City, 50); err != nil {
-      return err
-    }
+    return ValidateLength(l.City, 50)
   }
-  return nil
+  return 200
 }
 
-func (u *User) Validate() error {
-  if u == nil {
-    return ErrInvalid
-  }
+func (u *User) Validate() int {
   if u.Email != nil {
-    if err := ValidateLength(u.Email, 100); err != nil {
-      return err
+    if ValidateLength(u.Email, 100) != 200 {
+      return 400
     }
   }
   if u.FirstName != nil {
-    if err := ValidateLength(u.FirstName, 50); err != nil {
-      return err
+    if ValidateLength(u.FirstName, 50) != 200 {
+      return 400
     }
   }
   if u.LastName != nil {
-    if err := ValidateLength(u.LastName, 50); err != nil {
-      return err
+    if ValidateLength(u.LastName, 50) != 200 {
+      return 400
     }
   }
   if u.Gender != nil {
-    if err := ValidateGender(u.Gender); err != nil {
-      return err
-    }
+    return ValidateGender(u.Gender)
   }
-  return nil
+  return 200
 }
 
 func (u *User) CalculateAge() int {
@@ -150,16 +123,11 @@ func (u *User) CalculateAge2() int {
   return (int(time.Now().Unix()) - *(u.BirthDate)) / 31556736
 }
 
-func (v *Visit) Validate() error {
-  if v == nil {
-    return ErrInvalid
-  }
+func (v *Visit) Validate() int {
   if v.Mark != nil {
-    if err := ValidateMark(v.Mark); err != nil {
-      return err
-    }
+    return ValidateMark(v.Mark)
   }
-  return nil
+  return 200
 }
 
 

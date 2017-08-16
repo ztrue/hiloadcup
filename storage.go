@@ -1,50 +1,37 @@
 package main
 
 import (
-  "errors"
   "log"
+  "strconv"
   "app/structs"
 )
 
-var ErrNotFound = errors.New("not found")
-var ErrBadParams = errors.New("bad params")
-var ErrInternal = errors.New("internal")
-
-func AddLocation(e *structs.Location) error {
-  // if err := e.Validate(); err != nil {
-  //   return ErrBadParams
-  // }
+func AddLocation(e *structs.Location) {
   AddLocationProcess(e)
-  return nil
 }
 
-func AddLocationAsync(e *structs.Location) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
+func AddLocationAsync(e *structs.Location) int {
+  if e.Validate() != 200 {
+    return 400
   }
   go AddLocationProcess(e)
-  return nil
+  return 200
 }
 
 func AddLocationProcess(e *structs.Location) {
-  // AddCountry(*(e.Country))
   CacheLocationResponse(*(e.ID), e)
 }
 
-func AddUser(e *structs.User) error {
-  // if err := e.Validate(); err != nil {
-  //   return ErrBadParams
-  // }
+func AddUser(e *structs.User) {
   AddUserProcess(e)
-  return nil
 }
 
-func AddUserAsync(e *structs.User) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
+func AddUserAsync(e *structs.User) int {
+  if e.Validate() != 200 {
+    return 400
   }
   go AddUserProcess(e)
-  return nil
+  return 200
 }
 
 func AddUserProcess(e *structs.User) {
@@ -52,20 +39,16 @@ func AddUserProcess(e *structs.User) {
   CacheUserResponse(*(e.ID), e)
 }
 
-func AddVisit(e *structs.Visit) error {
-  // if err := e.Validate(); err != nil {
-  //   return ErrBadParams
-  // }
+func AddVisit(e *structs.Visit) {
   AddVisitProcess(e)
-  return nil
 }
 
-func AddVisitAsync(e *structs.Visit) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
+func AddVisitAsync(e *structs.Visit) int {
+  if e.Validate() != 200 {
+    return 400
   }
   go AddVisitProcess(e)
-  return nil
+  return 200
 }
 
 func AddVisitProcess(e *structs.Visit) {
@@ -74,23 +57,16 @@ func AddVisitProcess(e *structs.Visit) {
   CacheVisitResponse(*(e.ID), e)
 }
 
-func UpdateLocation(id uint32, e *structs.Location) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
+func UpdateLocationAsync(bid []byte, e *structs.Location) int {
+  if e.Validate() != 200 {
+    return 400
   }
-  UpdateLocationProcess(id, e)
-  return nil
+  go UpdateLocationProcess(bid, e)
+  return 200
 }
 
-func UpdateLocationAsync(id uint32, e *structs.Location) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
-  }
-  go UpdateLocationProcess(id, e)
-  return nil
-}
-
-func UpdateLocationProcess(id uint32, e *structs.Location) {
+func UpdateLocationProcess(bid []byte, e *structs.Location) {
+  id := ParseID(bid)
   se := GetLocationSafe(id)
   if se == nil {
     log.Println(id)
@@ -111,23 +87,16 @@ func UpdateLocationProcess(id uint32, e *structs.Location) {
   CacheLocationResponse(id, se)
 }
 
-func UpdateUser(id uint32, e *structs.User) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
+func UpdateUserAsync(bid []byte, e *structs.User) int {
+  if e.Validate() != 200 {
+    return 400
   }
-  UpdateUserProcess(id, e)
-  return nil
+  go UpdateUserProcess(bid, e)
+  return 200
 }
 
-func UpdateUserAsync(id uint32, e *structs.User) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
-  }
-  go UpdateUserProcess(id, e)
-  return nil
-}
-
-func UpdateUserProcess(id uint32, e *structs.User) {
+func UpdateUserProcess(bid []byte, e *structs.User) {
+  id := ParseID(bid)
   se := GetUserSafe(id)
   if se == nil {
     log.Println(id)
@@ -152,23 +121,16 @@ func UpdateUserProcess(id uint32, e *structs.User) {
   CacheUserResponse(id, se)
 }
 
-func UpdateVisit(id uint32, e *structs.Visit) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
+func UpdateVisitAsync(bid []byte, e *structs.Visit) int {
+  if e.Validate() != 200 {
+    return 400
   }
-  UpdateVisitProcess(id, e)
-  return nil
+  go UpdateVisitProcess(bid, e)
+  return 200
 }
 
-func UpdateVisitAsync(id uint32, e *structs.Visit) error {
-  if err := e.Validate(); err != nil {
-    return ErrBadParams
-  }
-  go UpdateVisitProcess(id, e)
-  return nil
-}
-
-func UpdateVisitProcess(id uint32, e *structs.Visit) {
+func UpdateVisitProcess(bid []byte, e *structs.Visit) {
+  id := ParseID(bid)
   se := GetVisitSafe(id)
   if se == nil {
     log.Println(id)
@@ -195,4 +157,13 @@ func UpdateVisitProcess(id uint32, e *structs.Visit) {
     AddUserVisit(*(se.User), id, oldUserID)
   }
   CacheVisitResponse(id, se)
+}
+
+func ParseID(b []byte) uint32 {
+  id64, err := strconv.ParseUint(string(b), 10, 32)
+  if err != nil {
+    log.Println(err)
+    return 200
+  }
+  return uint32(id64)
 }

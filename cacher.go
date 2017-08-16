@@ -3,7 +3,6 @@ package main
 import (
   "fmt"
   "log"
-  "strconv"
   "sync"
   "sort"
   "github.com/pquerna/ffjson/ffjson"
@@ -226,31 +225,20 @@ func GetLocationVisitsEntities(id uint32) []*structs.Visit {
 }
 
 func PathExists(path []byte) bool {
-  _, ok := PathCache[string(path)]
-  return ok
+  return PathCache[string(path)] != nil
 }
 
 func PathParamExists(path []byte) bool {
-  _, ok := PathParamCache[string(path)]
-  return ok
+  return PathParamCache[string(path)] != nil
 }
-
-// func PathParamCountryExists(path []byte, country string) bool {
-//   m, ok := PathParamCountryCache[string(path)]
-//   if !ok {
-//     return false
-//   }
-//   _, ok = m[country]
-//   return ok
-// }
 
 func GetCachedUserVisits(id uint32) []*structs.Visit {
   return UserVisitsCache[id]
 }
 
 // func GetCachedUserVisitsByCountry(id uint32, country string) []*structs.Visit {
-//   m, ok := UserVisitsByCountryCache[id]
-//   if !ok {
+//   m := UserVisitsByCountryCache[id]
+//   if m == nil {
 //     return nil
 //   }
 //   return m[country]
@@ -417,24 +405,21 @@ func CacheLocationResponse(id uint32, e *structs.Location) {
   mLocation.Lock()
   LocationCache[id] = e
   mLocation.Unlock()
-  path := fmt.Sprintf("/locations/%d", id)
-  CachePathLocation(path, e)
+  CachePathLocation(fmt.Sprintf("/locations/%d", id), e)
 }
 
 func CacheUserResponse(id uint32, e *structs.User) {
   mUser.Lock()
   UserCache[id] = e
   mUser.Unlock()
-  path := fmt.Sprintf("/users/%d", id)
-  CachePathUser(path, e)
+  CachePathUser(fmt.Sprintf("/users/%d", id), e)
 }
 
 func CacheVisitResponse(id uint32, e *structs.Visit) {
   mVisit.Lock()
   VisitCache[id] = e
   mVisit.Unlock()
-  path := fmt.Sprintf("/visits/%d", id)
-  CachePathVisit(path, e)
+  CachePathVisit(fmt.Sprintf("/visits/%d", id), e)
 }
 
 func CacheUserVisits(id uint32) {
@@ -458,12 +443,12 @@ func CacheLocationAvg(id uint32) {
 }
 
 func CacheUserVisitsResponse(id uint32) {
-  visits := GetCachedUserVisits(id)
-  userVisits := ConvertUserVisits(visits, func(v *structs.Visit, l *structs.Location) bool {
-    return true
-  })
-  path := fmt.Sprintf("/users/%d/visits", id)
-  CachePathParamUserVisits(path, userVisits)
+  CachePathParamUserVisits(
+    fmt.Sprintf("/users/%d/visits", id),
+    ConvertUserVisits(GetCachedUserVisits(id), func(v *structs.Visit, l *structs.Location) bool {
+      return true
+    }),
+  )
 }
 
 // func CacheUserVisitsByCountryResponse(id uint32, country string) {
@@ -476,12 +461,12 @@ func CacheUserVisitsResponse(id uint32) {
 // }
 
 func CacheLocationAvgResponse(id uint32) {
-  visits := GetCachedLocationAvg(id)
-  locationAvg := ConvertLocationAvg(visits, func(v *structs.Visit, u *structs.User) bool {
-    return true
-  })
-  path := fmt.Sprintf("/locations/%d/avg", id)
-  CachePathParamLocationAvg(path, locationAvg)
+  CachePathParamLocationAvg(
+    fmt.Sprintf("/locations/%d/avg", id),
+    ConvertLocationAvg(GetCachedLocationAvg(id), func(v *structs.Visit, u *structs.User) bool {
+      return true
+    }),
+  )
 }
 
 type VisitsByDate []*structs.Visit
@@ -506,12 +491,14 @@ func ConvertUserVisits(visits []*structs.Visit, filter func(*structs.Visit, *str
     if !filter(v, l) {
       continue
     }
-    uv := &structs.UserVisit{
-      Mark: v.Mark,
-      VisitedAt: v.VisitedAt,
-      Place: l.Place,
-    }
-    userVisits = append(userVisits, uv)
+    userVisits = append(
+      userVisits,
+      &structs.UserVisit{
+        Mark: v.Mark,
+        VisitedAt: v.VisitedAt,
+        Place: l.Place,
+      },
+    )
   }
   return &structs.UserVisitsList{
     Visits: userVisits,
@@ -540,8 +527,4 @@ func ConvertLocationAvg(visits []*structs.Visit, filter func(*structs.Visit, *st
   return &structs.LocationAvg{
     Avg: float32(avg),
   }
-}
-
-func idToStr(id uint32) string {
-  return strconv.FormatUint(uint64(id), 10)
 }

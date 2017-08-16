@@ -8,22 +8,15 @@ import (
 )
 
 func Import(src, dst string) error {
-  // List(filepath.Dir(src))
   files, err := Unzip(src, dst)
   if err != nil {
     return err
   }
-  // List(dst)
-  // log.Println(files)
   for _, filename := range files {
-    // go func(filename string) {
-      if err := Parse(filename); err != nil {
-        log.Fatal(err)
-      }
-    // }(filename)
+    if err := Parse(filename); err != nil {
+      log.Fatal(err)
+    }
   }
-  // time.Sleep(3 * time.Second)
-  // log.Println(GetUsers())
   return nil
 }
 
@@ -50,18 +43,12 @@ func Parse(filename string) error {
 
 func Save(payload *structs.Payload) {
   for _, e := range payload.Locations {
-    if err := AddLocation(e); err != nil {
-      log.Println(err)
-    }
+    AddLocation(e)
   }
   for _, e := range payload.Users {
-    if err := AddUser(e); err != nil {
-      log.Println(err)
-    }
+    AddUser(e)
   }
   for _, e := range payload.Visits {
-    if err := AddVisit(e); err != nil {
-      log.Println(err)
-    }
+    AddVisit(e)
   }
 }
