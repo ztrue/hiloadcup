@@ -128,15 +128,6 @@ func GetLocationAvg(id uint32, v *fasthttp.Args) (*structs.LocationAvg, error) {
     }
   }
 
-  // For some reason it's calculated as 3 instead of 0 in tests
-  // Dirty hack BEGIN
-  if id == 51977 && gender == "f" && toAge == 51 && !hasFromDate && !hasToDate && !hasFromAge {
-    return &structs.LocationAvg{
-      Avg: 3,
-    }, nil
-  }
-  // Dirty hack END
-
   visits := GetCachedLocationAvg(id)
   if visits == nil {
     log.Println(id)
