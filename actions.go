@@ -2,7 +2,7 @@ package main
 
 import (
   "bytes"
-  "github.com/valyala/fasthttp"
+  "app/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
 )

@@ -4,7 +4,7 @@ import (
   "bytes"
   "log"
   "time"
-  "github.com/valyala/fasthttp"
+  "app/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
 )
@@ -40,6 +40,7 @@ func Serve(addr string) error {
 }
 
 func route(ctx *fasthttp.RequestCtx) {
+  ResponseStatus(ctx, 400)
   path := ctx.Path()
 
   if bytes.Equal(ctx.Method(), methodGet) {

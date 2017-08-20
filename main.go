@@ -1,7 +1,5 @@
 package main
 
-// TODO "github.com/valyala/fasthttp"
-
 import (
   "log"
 )

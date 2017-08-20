@@ -2,7 +2,7 @@ package main
 
 import (
   "strconv"
-  "github.com/valyala/fasthttp"
+  "app/fasthttp"
   "app/structs"
 )
 

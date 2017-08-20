@@ -26,15 +26,15 @@ var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 // var PathParamCountryCache = map[string]map[string][]byte{}
 
-var mUVMap = &sync.Mutex{}
-var mLVMap = &sync.Mutex{}
-// var mCountries = &sync.Mutex{}
-var mLocation = &sync.Mutex{}
-var mUser = &sync.Mutex{}
-var mVisit = &sync.Mutex{}
-var mPath = &sync.Mutex{}
-var mPathParam = &sync.Mutex{}
-// var mPathParamCountry = &sync.Mutex{}
+var mUVMap = &sync.RWMutex{}
+var mLVMap = &sync.RWMutex{}
+// var mCountries = &sync.RWMutex{}
+var mLocation = &sync.RWMutex{}
+var mUser = &sync.RWMutex{}
+var mVisit = &sync.RWMutex{}
+var mPath = &sync.RWMutex{}
+var mPathParam = &sync.RWMutex{}
+// var mPathParamCountry = &sync.RWMutex{}
 
 func PrepareCache() {
   go func() {
@@ -135,23 +135,23 @@ func GetVisit(id uint32) *structs.Visit {
 }
 
 func GetLocationSafe(id uint32) *structs.Location {
-  mLocation.Lock()
+  mLocation.RLock()
   e := LocationCache[id]
-  mLocation.Unlock()
+  mLocation.RUnlock()
   return e
 }
 
 func GetUserSafe(id uint32) *structs.User {
-  mUser.Lock()
+  mUser.RLock()
   e := UserCache[id]
-  mUser.Unlock()
+  mUser.RUnlock()
   return e
 }
 
 func GetVisitSafe(id uint32) *structs.Visit {
-  mVisit.Lock()
+  mVisit.RLock()
   e := VisitCache[id]
-  mVisit.Unlock()
+  mVisit.RUnlock()
   return e
 }
 
