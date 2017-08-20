@@ -2,6 +2,7 @@ package main
 
 import (
   "bytes"
+  "net"
   "app/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
@@ -30,7 +31,7 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args
 
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
   e := &structs.Location{}
-  if checkRequestLocation(ctx, e) != 200 {
+  if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
   }
@@ -41,9 +42,22 @@ func ActionNewLocation(ctx *fasthttp.RequestCtx) {
   ResponseBytes(ctx, dummyResponse)
 }
 
+func ActionNewLocation2(c net.Conn, body []byte) {
+  e := &structs.Location{}
+  if checkRequestLocation(body, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  if AddLocationAsync(e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  c.Write(OKEmptyJSON)
+}
+
 func ActionNewUser(ctx *fasthttp.RequestCtx) {
   e := &structs.User{}
-  if checkRequestUser(ctx, e) != 200 {
+  if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
   }
@@ -54,9 +68,22 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
   ResponseBytes(ctx, dummyResponse)
 }
 
+func ActionNewUser2(c net.Conn, body []byte) {
+  e := &structs.User{}
+  if checkRequestUser(body, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  if AddUserAsync(e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  c.Write(OKEmptyJSON)
+}
+
 func ActionNewVisit(ctx *fasthttp.RequestCtx) {
   e := &structs.Visit{}
-  if checkRequestVisit(ctx, e) != 200 {
+  if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
   }
@@ -67,9 +94,22 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
   ResponseBytes(ctx, dummyResponse)
 }
 
+func ActionNewVisit2(c net.Conn, body []byte) {
+  e := &structs.Visit{}
+  if checkRequestVisit(body, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  if AddVisitAsync(e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  c.Write(OKEmptyJSON)
+}
+
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
   e := &structs.Location{}
-  if checkRequestLocation(ctx, e) != 200 {
+  if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
   }
@@ -80,9 +120,22 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
   ResponseBytes(ctx, dummyResponse)
 }
 
+func ActionUpdateLocation2(c net.Conn, body, bid []byte) {
+  e := &structs.Location{}
+  if checkRequestLocation(body, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  if UpdateLocationAsync(bid, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  c.Write(OKEmptyJSON)
+}
+
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
   e := &structs.User{}
-  if checkRequestUser(ctx, e) != 200 {
+  if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
   }
@@ -93,9 +146,22 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
   ResponseBytes(ctx, dummyResponse)
 }
 
+func ActionUpdateUser2(c net.Conn, body, bid []byte) {
+  e := &structs.User{}
+  if checkRequestUser(body, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  if UpdateUserAsync(bid, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  c.Write(OKEmptyJSON)
+}
+
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
   e := &structs.Visit{}
-  if checkRequestVisit(ctx, e) != 200 {
+  if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
   }
@@ -106,9 +172,21 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
   ResponseBytes(ctx, dummyResponse)
 }
 
-func checkRequestLocation(ctx *fasthttp.RequestCtx, e *structs.Location) int {
-  body := ctx.PostBody()
-  if checkNils(ctx, body) != 200 {
+func ActionUpdateVisit2(c net.Conn, body, bid []byte) {
+  e := &structs.Visit{}
+  if checkRequestVisit(body, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  if UpdateVisitAsync(bid, e) != 200 {
+    c.Write(BadRequest)
+    return
+  }
+  c.Write(OKEmptyJSON)
+}
+
+func checkRequestLocation(body []byte, e *structs.Location) int {
+  if checkNils(body) != 200 {
     return 400
   }
   if ffjson.Unmarshal(body, e) != nil {
@@ -120,9 +198,8 @@ func checkRequestLocation(ctx *fasthttp.RequestCtx, e *structs.Location) int {
   return 200
 }
 
-func checkRequestUser(ctx *fasthttp.RequestCtx, e *structs.User) int {
-  body := ctx.PostBody()
-  if checkNils(ctx, body) != 200 {
+func checkRequestUser(body []byte, e *structs.User) int {
+  if checkNils(body) != 200 {
     return 400
   }
   if ffjson.Unmarshal(body, e) != nil {
@@ -134,9 +211,8 @@ func checkRequestUser(ctx *fasthttp.RequestCtx, e *structs.User) int {
   return 200
 }
 
-func checkRequestVisit(ctx *fasthttp.RequestCtx, e *structs.Visit) int {
-  body := ctx.PostBody()
-  if checkNils(ctx, body) != 200 {
+func checkRequestVisit(body []byte, e *structs.Visit) int {
+  if checkNils(body) != 200 {
     return 400
   }
   if ffjson.Unmarshal(body, e) != nil {
@@ -148,7 +224,7 @@ func checkRequestVisit(ctx *fasthttp.RequestCtx, e *structs.Visit) int {
   return 200
 }
 
-func checkNils(ctx *fasthttp.RequestCtx, body []byte) int {
+func checkNils(body []byte) int {
   if bytes.Contains(body, nullRequest) {
     return 400
   }
