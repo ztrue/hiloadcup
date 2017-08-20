@@ -19,7 +19,7 @@ func AddLocationAsync(e *structs.Location) int {
 }
 
 func AddLocationProcess(e *structs.Location) {
-  CacheLocationResponse(*(e.ID), e)
+  CacheLocationResponse(IDToStr(*(e.ID)), e)
 }
 
 func AddUser(e *structs.User) {
@@ -36,7 +36,7 @@ func AddUserAsync(e *structs.User) int {
 
 func AddUserProcess(e *structs.User) {
   e.Age = e.CalculateAge()
-  CacheUserResponse(*(e.ID), e)
+  CacheUserResponse(IDToStr(*(e.ID)), e)
 }
 
 func AddVisit(e *structs.Visit) {
@@ -52,9 +52,9 @@ func AddVisitAsync(e *structs.Visit) int {
 }
 
 func AddVisitProcess(e *structs.Visit) {
-  AddLocationVisit(*(e.Location), *(e.ID), 0)
-  AddUserVisit(*(e.User), *(e.ID), 0)
-  CacheVisitResponse(*(e.ID), e)
+  AddLocationVisit(IDToStr(*(e.Location)), IDToStr(*(e.ID)), "")
+  AddUserVisit(IDToStr(*(e.User)), IDToStr(*(e.ID)), "")
+  CacheVisitResponse(IDToStr(*(e.ID)), e)
 }
 
 func UpdateLocationAsync(bid []byte, e *structs.Location) int {
@@ -66,7 +66,7 @@ func UpdateLocationAsync(bid []byte, e *structs.Location) int {
 }
 
 func UpdateLocationProcess(bid []byte, e *structs.Location) {
-  id := ParseID(bid)
+  id := string(bid)
   se := GetLocationSafe(id)
   if se == nil {
     log.Println(id)
@@ -96,7 +96,7 @@ func UpdateUserAsync(bid []byte, e *structs.User) int {
 }
 
 func UpdateUserProcess(bid []byte, e *structs.User) {
-  id := ParseID(bid)
+  id := string(bid)
   se := GetUserSafe(id)
   if se == nil {
     log.Println(id)
@@ -130,7 +130,7 @@ func UpdateVisitAsync(bid []byte, e *structs.Visit) int {
 }
 
 func UpdateVisitProcess(bid []byte, e *structs.Visit) {
-  id := ParseID(bid)
+  id := string(bid)
   se := GetVisitSafe(id)
   if se == nil {
     log.Println(id)
@@ -151,19 +151,14 @@ func UpdateVisitProcess(bid []byte, e *structs.Visit) {
     se.Mark = e.Mark
   }
   if *(se.Location) != oldLocationID {
-    AddLocationVisit(*(se.Location), id, oldLocationID)
+    AddLocationVisit(IDToStr(*(se.Location)), id, IDToStr(oldLocationID))
   }
   if *(se.User) != oldUserID {
-    AddUserVisit(*(se.User), id, oldUserID)
+    AddUserVisit(IDToStr(*(se.User)), id, IDToStr(oldUserID))
   }
   CacheVisitResponse(id, se)
 }
 
-func ParseID(b []byte) uint32 {
-  id64, err := strconv.ParseUint(string(b), 10, 32)
-  if err != nil {
-    log.Println(err)
-    return 200
-  }
-  return uint32(id64)
+func IDToStr(id uint32) string {
+  return strconv.FormatUint(uint64(id), 10)
 }

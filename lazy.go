@@ -7,7 +7,7 @@ import (
 )
 
 func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) {
-  id := ParseID(bid)
+  id := string(bid)
   if GetUser(id) == nil {
     return nil, 404
   }
@@ -69,7 +69,7 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
 }
 
 func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
-  id := ParseID(bid)
+  id := string(bid)
   if GetLocation(id) == nil {
     return nil, 404
   }
