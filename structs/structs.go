@@ -34,6 +34,8 @@ type UserVisit struct {
   Mark *int `json:"mark"`
   VisitedAt *int `json:"visited_at"`
   Place *string `json:"place"`
+  Country *string `json:"-"`
+  Distance *uint32 `json:"-"`
 }
 
 type LocationAvg struct {

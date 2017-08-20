@@ -51,17 +51,17 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
   // } else {
   //  visits = GetCachedUserVisits(id)
   // }
-  return ConvertUserVisits(GetCachedUserVisits(id), func(v *structs.Visit, l *structs.Location) bool {
-    if hasFromDate && *(v.VisitedAt) <= fromDate {
+  return ConvertUserVisits(GetCachedUserVisits(id), func(uv *structs.UserVisit) bool {
+    if hasFromDate && *(uv.VisitedAt) <= fromDate {
       return false
     }
-    if hasToDate && *(v.VisitedAt) >= toDate {
+    if hasToDate && *(uv.VisitedAt) >= toDate {
       return false
     }
-    if hasToDistance && *(l.Distance) >= toDistance {
+    if hasToDistance && *(uv.Distance) >= toDistance {
       return false
     }
-    if hasCountry && *(l.Country) != country {
+    if hasCountry && *(uv.Country) != country {
       return false
     }
     return true
