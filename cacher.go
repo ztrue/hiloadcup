@@ -1,7 +1,6 @@
 package main
 
 import (
-  "fmt"
   "log"
   "sync"
   "sort"
@@ -21,7 +20,7 @@ var UserCache = map[string]*structs.User{}
 var VisitCache = map[string]*structs.Visit{}
 var UserVisitsCache = map[string][]*structs.UserVisit{}
 // var UserVisitsByCountryCache = map[string]map[string][]*structs.Visit{}
-var LocationAvgCache = map[string][]*structs.Visit{}
+var LocationAvgCache = map[string][]*structs.LocationVisit{}
 var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 // var PathParamCountryCache = map[string]map[string][]byte{}
@@ -225,17 +224,30 @@ func GetUserVisitsEntities(id string) []*structs.UserVisit {
 //   return visits
 // }
 
-func GetLocationVisitsEntities(id string) []*structs.Visit {
-  visits := []*structs.Visit{}
+func GetLocationVisitsEntities(id string) []*structs.LocationVisit {
+  locationVisits := []*structs.LocationVisit{}
   for _, visitID := range GetLocationVisitsIDs(id) {
     v := GetVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
     }
-    visits = append(visits, v)
+    u := GetUser(IDToStr(*(v.User)))
+    if u == nil {
+      log.Println(id, visitID, *(v.User))
+      continue
+    }
+    locationVisits = append(
+      locationVisits,
+      &structs.LocationVisit {
+        VisitedAt: v.VisitedAt,
+        Age: &(u.Age),
+        Gender: u.Gender,
+        Mark: v.Mark,
+      },
+    )
   }
-  return visits
+  return locationVisits
 }
 
 func PathExists(path []byte) bool {
@@ -258,7 +270,7 @@ func GetCachedUserVisits(id string) []*structs.UserVisit {
 //   return m[country]
 // }
 
-func GetCachedLocationAvg(id string) []*structs.Visit {
+func GetCachedLocationAvg(id string) []*structs.LocationVisit {
   return LocationAvgCache[id]
 }
 
@@ -419,21 +431,21 @@ func CacheLocationResponse(id string, e *structs.Location) {
   mLocation.Lock()
   LocationCache[id] = e
   mLocation.Unlock()
-  CachePathLocation(fmt.Sprintf("/locations/%d", id), e)
+  CachePathLocation("/locations/" + id, e)
 }
 
 func CacheUserResponse(id string, e *structs.User) {
   mUser.Lock()
   UserCache[id] = e
   mUser.Unlock()
-  CachePathUser(fmt.Sprintf("/users/%d", id), e)
+  CachePathUser("/users/" + id, e)
 }
 
 func CacheVisitResponse(id string, e *structs.Visit) {
   mVisit.Lock()
   VisitCache[id] = e
   mVisit.Unlock()
-  CachePathVisit(fmt.Sprintf("/visits/%d", id), e)
+  CachePathVisit("/visits/" + id, e)
 }
 
 func CacheUserVisits(id string) {
@@ -458,26 +470,27 @@ func CacheLocationAvg(id string) {
 
 func CacheUserVisitsResponse(id string) {
   CachePathParamUserVisits(
-    fmt.Sprintf("/users/%d/visits", id),
-    ConvertUserVisits(GetCachedUserVisits(id), func(uv *structs.UserVisit) bool {
+    "/users/" + id + "/visits",
+    ConvertUserVisits(GetCachedUserVisits(id), func(*structs.UserVisit) bool {
       return true
     }),
   )
 }
 
 // func CacheUserVisitsByCountryResponse(id string, country string) {
-//   visits := GetCachedUserVisitsByCountry(id, country)
-//   userVisits := ConvertUserVisits(visits, func(v *structs.Visit, l *structs.Location) bool {
-//     return true
-//   })
-//   path := fmt.Sprintf("/users/%d/visits", id)
-//   CachePathParamCountryUserVisits(path, country, userVisits)
+//   CachePathParamCountryUserVisits(
+//     "/users/" + id + "/visits",
+//     country,
+//     ConvertUserVisits(GetCachedUserVisitsByCountry(id, country), func(*structs.UserVisit) bool {
+//       return true
+//     }),
+//   )
 // }
 
 func CacheLocationAvgResponse(id string) {
   CachePathParamLocationAvg(
-    fmt.Sprintf("/locations/%d/avg", id),
-    ConvertLocationAvg(GetCachedLocationAvg(id), func(*structs.Visit, *structs.User) bool {
+    "/locations/" + id + "/avg",
+    ConvertLocationAvg(GetCachedLocationAvg(id), func(*structs.LocationVisit) bool {
       return true
     }),
   )
@@ -507,20 +520,15 @@ func ConvertUserVisits(allUserVisits []*structs.UserVisit, filter func(*structs.
   }
 }
 
-func ConvertLocationAvg(visits []*structs.Visit, filter func(*structs.Visit, *structs.User) bool) *structs.LocationAvg {
+func ConvertLocationAvg(locationVisits []*structs.LocationVisit, filter func(*structs.LocationVisit) bool) *structs.LocationAvg {
   count := 0
   sum := 0
-  for _, v := range visits {
-    u := GetUser(IDToStr(*(v.User)))
-    if u == nil {
-      log.Println(*(v.User))
-      continue
-    }
-    if !filter(v, u) {
+  for _, lv := range locationVisits {
+    if !filter(lv) {
       continue
     }
     count++
-    sum += *(v.Mark)
+    sum += *(lv.Mark)
   }
   avg := float64(0)
   if count > 0 {

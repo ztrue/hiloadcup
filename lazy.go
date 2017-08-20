@@ -115,20 +115,20 @@ func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
     }
   }
 
-  return ConvertLocationAvg(GetCachedLocationAvg(id), func(v *structs.Visit, u *structs.User) bool {
-    if hasFromDate && *(v.VisitedAt) <= fromDate {
+  return ConvertLocationAvg(GetCachedLocationAvg(id), func(lv *structs.LocationVisit) bool {
+    if hasFromDate && *(lv.VisitedAt) <= fromDate {
       return false
     }
-    if hasToDate && *(v.VisitedAt) >= toDate {
+    if hasToDate && *(lv.VisitedAt) >= toDate {
       return false
     }
-    if hasGender && *(u.Gender) != gender {
+    if hasGender && *(lv.Gender) != gender {
       return false
     }
-    if hasFromAge && u.Age < fromAge {
+    if hasFromAge && *(lv.Age) < fromAge {
       return false
     }
-    if hasToAge && u.Age >= toAge {
+    if hasToAge && *(lv.Age) >= toAge {
       return false
     }
     return true

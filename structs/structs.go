@@ -38,6 +38,13 @@ type UserVisit struct {
   Distance *uint32 `json:"-"`
 }
 
+type LocationVisit struct {
+  VisitedAt *int `json:"-"`
+  Age *int `json:"-"`
+  Gender *string `json:"-"`
+  Mark *int `json:"-"`
+}
+
 type LocationAvg struct {
   Avg float32 `json:"avg"`
 }
