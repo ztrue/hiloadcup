@@ -2,12 +2,18 @@ package main
 
 import (
   "bytes"
+  "io"
   "log"
+  "net"
   "time"
   "app/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
 )
+
+var OK = []byte("HTTP/1.0 200 OK\nContent-Length: 2\n\n{}\n")
+var space = byte(' ')
+var question = byte('?')
 
 var methodGet = []byte("GET")
 var methodPost = []byte("POST")
@@ -36,7 +42,50 @@ func Serve(addr string) error {
     }
   }()
   log.Println("Server started at " + addr)
-  return fasthttp.ListenAndServe(addr, route)
+  return ListenAndServe(addr, func(c net.Conn) {
+    buf := make([]byte, 40)
+    _, err := c.Read(buf)
+    if err != nil {
+      if err != io.EOF {
+        log.Println(err)
+      }
+      return
+    }
+    var start int
+    isGet := true
+    // GET
+    if buf[0] == methodGet[0] {
+      start = 4
+    } else {
+      start = 5
+      isGet = false
+    }
+    end := start
+    query := 0
+    for i, b := range buf[start:] {
+      if b == question {
+        query = start + i
+      } else if b == space {
+        end = start + i
+        break
+      }
+    }
+    if query > 0 {
+      route2(c, isGet, buf[start:query], buf[query + 1:end])
+    } else {
+      route2(c, isGet, buf[start:end], nil)
+    }
+    _, err = c.Write(OK)
+    if err != nil {
+      log.Println(err)
+      return
+    }
+  })
+  // return fasthttp.ListenAndServe(addr, route)
+}
+
+func route2(c net.Conn, isGet bool, url, query []byte) {
+  log.Println(string(url), string(query))
 }
 
 func route(ctx *fasthttp.RequestCtx) {
