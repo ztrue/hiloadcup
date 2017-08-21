@@ -6,11 +6,11 @@ import (
   "app/structs"
 )
 
-func AddLocation(e *structs.Location) {
+func AddLocation(e *structs.LocationUp) {
   AddLocationProcess(e)
 }
 
-func AddLocationAsync(e *structs.Location) int {
+func AddLocationAsync(e *structs.LocationUp) int {
   if e.Validate() != 200 {
     return 400
   }
@@ -18,15 +18,24 @@ func AddLocationAsync(e *structs.Location) int {
   return 200
 }
 
-func AddLocationProcess(e *structs.Location) {
-  CacheLocationResponse(IDToStr(*(e.ID)), e)
+func AddLocationProcess(e *structs.LocationUp) {
+  CacheLocationResponse(
+    IDToStr(*e.ID),
+    &structs.Location{
+      ID: *e.ID,
+      Place: *e.Place,
+      Country: *e.Country,
+      City: *e.City,
+      Distance: *e.Distance,
+    },
+  )
 }
 
-func AddUser(e *structs.User) {
+func AddUser(e *structs.UserUp) {
   AddUserProcess(e)
 }
 
-func AddUserAsync(e *structs.User) int {
+func AddUserAsync(e *structs.UserUp) int {
   if e.Validate() != 200 {
     return 400
   }
@@ -34,16 +43,26 @@ func AddUserAsync(e *structs.User) int {
   return 200
 }
 
-func AddUserProcess(e *structs.User) {
-  e.Age = e.CalculateAge()
-  CacheUserResponse(IDToStr(*(e.ID)), e)
+func AddUserProcess(e *structs.UserUp) {
+  CacheUserResponse(
+    IDToStr(*e.ID),
+    &structs.User{
+      ID: *e.ID,
+      Email: *e.Email,
+      FirstName: *e.FirstName,
+      LastName: *e.LastName,
+      Gender: *e.Gender,
+      BirthDate: *e.BirthDate,
+      Age: e.CalculateAge(),
+    },
+  )
 }
 
-func AddVisit(e *structs.Visit) {
+func AddVisit(e *structs.VisitUp) {
   AddVisitProcess(e)
 }
 
-func AddVisitAsync(e *structs.Visit) int {
+func AddVisitAsync(e *structs.VisitUp) int {
   if e.Validate() != 200 {
     return 400
   }
@@ -51,13 +70,21 @@ func AddVisitAsync(e *structs.Visit) int {
   return 200
 }
 
-func AddVisitProcess(e *structs.Visit) {
-  AddLocationVisit(IDToStr(*(e.Location)), IDToStr(*(e.ID)), "")
-  AddUserVisit(IDToStr(*(e.User)), IDToStr(*(e.ID)), "")
-  CacheVisitResponse(IDToStr(*(e.ID)), e)
+func AddVisitProcess(e *structs.VisitUp) {
+  v := &structs.Visit{
+    ID: *e.ID,
+    Location: *e.Location,
+    User: *e.User,
+    VisitedAt: *e.VisitedAt,
+    Mark: *e.Mark,
+  }
+  id := IDToStr(v.ID)
+  AddLocationVisit(IDToStr(v.Location), id, "")
+  AddUserVisit(IDToStr(v.User), id, "")
+  CacheVisitResponse(id, v)
 }
 
-func UpdateLocationAsync(bid []byte, e *structs.Location) int {
+func UpdateLocationAsync(bid []byte, e *structs.LocationUp) int {
   if e.Validate() != 200 {
     return 400
   }
@@ -65,7 +92,7 @@ func UpdateLocationAsync(bid []byte, e *structs.Location) int {
   return 200
 }
 
-func UpdateLocationProcess(bid []byte, e *structs.Location) {
+func UpdateLocationProcess(bid []byte, e *structs.LocationUp) {
   id := string(bid)
   se := GetLocationSafe(id)
   if se == nil {
@@ -73,21 +100,21 @@ func UpdateLocationProcess(bid []byte, e *structs.Location) {
     return
   }
   if e.Place != nil {
-    se.Place = e.Place
+    se.Place = *e.Place
   }
   if e.Country != nil {
-    se.Country = e.Country
+    se.Country = *e.Country
   }
   if e.City != nil {
-    se.City = e.City
+    se.City = *e.City
   }
   if e.Distance != nil {
-    se.Distance = e.Distance
+    se.Distance = *e.Distance
   }
   CacheLocationResponse(id, se)
 }
 
-func UpdateUserAsync(bid []byte, e *structs.User) int {
+func UpdateUserAsync(bid []byte, e *structs.UserUp) int {
   if e.Validate() != 200 {
     return 400
   }
@@ -95,7 +122,7 @@ func UpdateUserAsync(bid []byte, e *structs.User) int {
   return 200
 }
 
-func UpdateUserProcess(bid []byte, e *structs.User) {
+func UpdateUserProcess(bid []byte, e *structs.UserUp) {
   id := string(bid)
   se := GetUserSafe(id)
   if se == nil {
@@ -103,25 +130,25 @@ func UpdateUserProcess(bid []byte, e *structs.User) {
     return
   }
   if e.Email != nil {
-    se.Email = e.Email
+    se.Email = *e.Email
   }
   if e.FirstName != nil {
-    se.FirstName = e.FirstName
+    se.FirstName = *e.FirstName
   }
   if e.LastName != nil {
-    se.LastName = e.LastName
+    se.LastName = *e.LastName
   }
   if e.Gender != nil {
-    se.Gender = e.Gender
+    se.Gender = *e.Gender
   }
   if e.BirthDate != nil {
-    se.BirthDate = e.BirthDate
+    se.BirthDate = *e.BirthDate
     se.Age = e.CalculateAge()
   }
   CacheUserResponse(id, se)
 }
 
-func UpdateVisitAsync(bid []byte, e *structs.Visit) int {
+func UpdateVisitAsync(bid []byte, e *structs.VisitUp) int {
   if e.Validate() != 200 {
     return 400
   }
@@ -129,32 +156,32 @@ func UpdateVisitAsync(bid []byte, e *structs.Visit) int {
   return 200
 }
 
-func UpdateVisitProcess(bid []byte, e *structs.Visit) {
+func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
   id := string(bid)
   se := GetVisitSafe(id)
   if se == nil {
     log.Println(id)
     return
   }
-  oldLocationID := *(se.Location)
-  oldUserID := *(se.User)
+  oldLocationID := se.Location
+  oldUserID := se.User
   if e.Location != nil {
-    se.Location = e.Location
+    se.Location = *e.Location
   }
   if e.User != nil {
-    se.User = e.User
+    se.User = *e.User
   }
   if e.VisitedAt != nil {
-    se.VisitedAt= e.VisitedAt
+    se.VisitedAt = *e.VisitedAt
   }
   if e.Mark != nil {
-    se.Mark = e.Mark
+    se.Mark = *e.Mark
   }
-  if *(se.Location) != oldLocationID {
-    AddLocationVisit(IDToStr(*(se.Location)), id, IDToStr(oldLocationID))
+  if se.Location != oldLocationID {
+    AddLocationVisit(IDToStr(se.Location), id, IDToStr(oldLocationID))
   }
-  if *(se.User) != oldUserID {
-    AddUserVisit(IDToStr(*(se.User)), id, IDToStr(oldUserID))
+  if se.User != oldUserID {
+    AddUserVisit(IDToStr(se.User), id, IDToStr(oldUserID))
   }
   CacheVisitResponse(id, se)
 }

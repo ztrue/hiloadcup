@@ -29,7 +29,7 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args
 }
 
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
-  e := &structs.Location{}
+  e := &structs.LocationUp{}
   if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -42,7 +42,7 @@ func ActionNewLocation(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewUser(ctx *fasthttp.RequestCtx) {
-  e := &structs.User{}
+  e := &structs.UserUp{}
   if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -55,7 +55,7 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewVisit(ctx *fasthttp.RequestCtx) {
-  e := &structs.Visit{}
+  e := &structs.VisitUp{}
   if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -68,7 +68,7 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
-  e := &structs.Location{}
+  e := &structs.LocationUp{}
   if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -81,7 +81,7 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
-  e := &structs.User{}
+  e := &structs.UserUp{}
   if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -94,7 +94,7 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
-  e := &structs.Visit{}
+  e := &structs.VisitUp{}
   if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -106,7 +106,7 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
   ResponseBytes(ctx, dummyResponse)
 }
 
-func checkRequestLocation(body []byte, e *structs.Location) int {
+func checkRequestLocation(body []byte, e *structs.LocationUp) int {
   if checkNils(body) != 200 {
     return 400
   }
@@ -119,7 +119,7 @@ func checkRequestLocation(body []byte, e *structs.Location) int {
   return 200
 }
 
-func checkRequestUser(body []byte, e *structs.User) int {
+func checkRequestUser(body []byte, e *structs.UserUp) int {
   if checkNils(body) != 200 {
     return 400
   }
@@ -132,7 +132,7 @@ func checkRequestUser(body []byte, e *structs.User) int {
   return 200
 }
 
-func checkRequestVisit(body []byte, e *structs.Visit) int {
+func checkRequestVisit(body []byte, e *structs.VisitUp) int {
   if checkNils(body) != 200 {
     return 400
   }

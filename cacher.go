@@ -182,9 +182,9 @@ func GetUserVisitsEntities(id string) []*structs.UserVisit {
       log.Println(id, visitID)
       continue
     }
-    l := GetLocation(IDToStr(*v.Location))
+    l := GetLocation(IDToStr(v.Location))
     if l == nil {
-      log.Println(id, visitID, *v.Location)
+      log.Println(id, visitID, v.Location)
       continue
     }
     userVisits = append(
@@ -210,12 +210,12 @@ func GetUserVisitsEntities(id string) []*structs.UserVisit {
 //       log.Println(id, country, visitID)
 //       continue
 //     }
-//     l := GetLocation(IDToStr(*(v.Location)))
+//     l := GetLocation(IDToStr(v.Location))
 //     if v == nil {
-//       log.Println(id, country, visitID, *(v.Location))
+//       log.Println(id, country, visitID, v.Location)
 //       continue
 //     }
-//     if *(l.Country) != country {
+//     if l.Country != country {
 //       continue
 //     }
 //     visits = append(visits, v)
@@ -232,16 +232,16 @@ func GetLocationVisitsEntities(id string) []*structs.LocationVisit {
       log.Println(id, visitID)
       continue
     }
-    u := GetUser(IDToStr(*(v.User)))
+    u := GetUser(IDToStr(v.User))
     if u == nil {
-      log.Println(id, visitID, *(v.User))
+      log.Println(id, visitID, v.User)
       continue
     }
     locationVisits = append(
       locationVisits,
       &structs.LocationVisit {
         VisitedAt: v.VisitedAt,
-        Age: &(u.Age),
+        Age: u.Age,
         Gender: u.Gender,
         Mark: v.Mark,
       },
@@ -504,7 +504,7 @@ func (v UserVisitsByDate) Swap(i, j int) {
   v[i], v[j] = v[j], v[i]
 }
 func (v UserVisitsByDate) Less(i, j int) bool {
-  return *(v[i].VisitedAt) < *(v[j].VisitedAt)
+  return v[i].VisitedAt < v[j].VisitedAt
 }
 
 func ConvertUserVisits(allUserVisits []*structs.UserVisit, filter func(*structs.UserVisit) bool) *structs.UserVisitsList {
@@ -528,7 +528,7 @@ func ConvertLocationAvg(locationVisits []*structs.LocationVisit, filter func(*st
       continue
     }
     count++
-    sum += *(lv.Mark)
+    sum += lv.Mark
   }
   avg := float64(0)
   if count > 0 {

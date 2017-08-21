@@ -52,16 +52,16 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
   //  visits = GetCachedUserVisits(id)
   // }
   return ConvertUserVisits(GetCachedUserVisits(id), func(uv *structs.UserVisit) bool {
-    if hasFromDate && *(uv.VisitedAt) <= fromDate {
+    if hasFromDate && uv.VisitedAt <= fromDate {
       return false
     }
-    if hasToDate && *(uv.VisitedAt) >= toDate {
+    if hasToDate && uv.VisitedAt >= toDate {
       return false
     }
-    if hasToDistance && *(uv.Distance) >= toDistance {
+    if hasToDistance && uv.Distance >= toDistance {
       return false
     }
-    if hasCountry && *(uv.Country) != country {
+    if hasCountry && uv.Country != country {
       return false
     }
     return true
@@ -116,19 +116,19 @@ func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
   }
 
   return ConvertLocationAvg(GetCachedLocationAvg(id), func(lv *structs.LocationVisit) bool {
-    if hasFromDate && *(lv.VisitedAt) <= fromDate {
+    if hasFromDate && lv.VisitedAt <= fromDate {
       return false
     }
-    if hasToDate && *(lv.VisitedAt) >= toDate {
+    if hasToDate && lv.VisitedAt >= toDate {
       return false
     }
-    if hasGender && *(lv.Gender) != gender {
+    if hasGender && lv.Gender != gender {
       return false
     }
-    if hasFromAge && *(lv.Age) < fromAge {
+    if hasFromAge && lv.Age < fromAge {
       return false
     }
-    if hasToAge && *(lv.Age) >= toAge {
+    if hasToAge && lv.Age >= toAge {
       return false
     }
     return true
