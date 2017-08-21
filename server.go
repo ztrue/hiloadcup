@@ -309,13 +309,13 @@ func route(ctx *fasthttp.RequestCtx) {
 
 func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
   ctx.SetStatusCode(status)
-  ctx.SetConnectionClose()
+  // ctx.SetConnectionClose()
 }
 
 func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
   ctx.SetBody(body)
-  ctx.SetConnectionClose()
+  // ctx.SetConnectionClose()
 }
 
 func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsList) {
@@ -324,7 +324,7 @@ func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsLi
     ResponseStatus(ctx, 400)
     return
   }
-  ctx.SetConnectionClose()
+  // ctx.SetConnectionClose()
 }
 
 func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg) {
@@ -333,5 +333,5 @@ func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg
     ResponseStatus(ctx, 400)
     return
   }
-  ctx.SetConnectionClose()
+  // ctx.SetConnectionClose()
 }
