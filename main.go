@@ -24,3 +24,4 @@ func main() {
 // TODO Check why there is a first long request
 // TODO Cache UserVisits when POST
 // TODO Fix countries index
+// TODO Parallel operation if possible
