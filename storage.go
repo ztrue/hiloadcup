@@ -59,18 +59,18 @@ func AddUserProcess(e *structs.UserUp) {
 }
 
 func AddVisit(e *structs.VisitUp) {
-  AddVisitProcess(e)
+  AddVisitProcess(e, false)
 }
 
 func AddVisitAsync(e *structs.VisitUp) int {
   if e.Validate() != 200 {
     return 400
   }
-  go AddVisitProcess(e)
+  go AddVisitProcess(e, true)
   return 200
 }
 
-func AddVisitProcess(e *structs.VisitUp) {
+func AddVisitProcess(e *structs.VisitUp, cache bool) {
   v := &structs.Visit{
     ID: *e.ID,
     Location: *e.Location,
@@ -79,8 +79,8 @@ func AddVisitProcess(e *structs.VisitUp) {
     Mark: *e.Mark,
   }
   id := IDToStr(v.ID)
-  AddLocationVisit(IDToStr(v.Location), id, "")
-  AddUserVisit(IDToStr(v.User), id, "")
+  AddLocationVisit(IDToStr(v.Location), id, "", cache)
+  AddUserVisit(IDToStr(v.User), id, "", cache)
   CacheVisitResponse(id, v)
 }
 
@@ -178,10 +178,10 @@ func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
     se.Mark = *e.Mark
   }
   if se.Location != oldLocationID {
-    AddLocationVisit(IDToStr(se.Location), id, IDToStr(oldLocationID))
+    AddLocationVisit(IDToStr(se.Location), id, IDToStr(oldLocationID), true)
   }
   if se.User != oldUserID {
-    AddUserVisit(IDToStr(se.User), id, IDToStr(oldUserID))
+    AddUserVisit(IDToStr(se.User), id, IDToStr(oldUserID), true)
   }
   CacheVisitResponse(id, se)
 }

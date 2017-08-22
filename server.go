@@ -3,7 +3,6 @@ package main
 import (
   "bytes"
   "log"
-  "time"
   "github.com/valyala/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
@@ -22,19 +21,19 @@ var routeVisitPrefix = []byte("/visits/")
 var routeVisitsSuffix = []byte("/visits")
 var routeAvgSuffix = []byte("/avg")
 
-var lastPost = time.Time{}
+// var lastPost = time.Time{}
 
 func Serve(addr string) error {
-  go func() {
-    for {
-      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
-        log.Println("CACHE UPDATE BEGIN")
-        PrepareCache()
-        break
-      }
-      time.Sleep(time.Second)
-    }
-  }()
+  // go func() {
+  //   for {
+  //     if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
+  //       log.Println("CACHE UPDATE BEGIN")
+  //       PrepareCache()
+  //       break
+  //     }
+  //     time.Sleep(time.Second)
+  //   }
+  // }()
   log.Println("Server started at " + addr)
   return fasthttp.ListenAndServe(addr, route)
 }
@@ -100,7 +99,7 @@ func route(ctx *fasthttp.RequestCtx) {
       return
     }
   } else {
-    lastPost = time.Now()
+    // lastPost = time.Now()
 
     if bytes.Equal(path, routeNewLocation) {
       ActionNewLocation(ctx)

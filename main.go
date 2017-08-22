@@ -12,8 +12,8 @@ func main() {
     log.Fatal(err)
   }
 
-  log.Println("CACHE")
-  PrepareCache()
+  // log.Println("CACHE")
+  // PrepareCache()
 
   log.Println("SERVE")
   log.Fatal(Serve(":80"))
@@ -25,3 +25,4 @@ func main() {
 // TODO Cache UserVisits when POST
 // TODO Fix countries index
 // TODO Parallel operation if possible
+// TODO RWMutex

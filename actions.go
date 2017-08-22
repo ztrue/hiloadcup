@@ -8,7 +8,7 @@ import (
 )
 
 var dummyResponse = []byte("{}")
-var nullRequest = []byte("\": null")
+var nullRequest = []byte("\": n")
 
 func ActionGetUserVisits(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args) {
   visits, status := GetUserVisits(bid, v)

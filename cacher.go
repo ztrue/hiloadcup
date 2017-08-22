@@ -31,57 +31,60 @@ var mLVMap = &sync.Mutex{}
 var mLocation = &sync.Mutex{}
 var mUser = &sync.Mutex{}
 var mVisit = &sync.Mutex{}
+var mUserVisits = &sync.Mutex{}
+// var mUserVisitsByCountry = &sync.Mutex{}
+var mLocationAvg = &sync.Mutex{}
 var mPath = &sync.Mutex{}
 var mPathParam = &sync.Mutex{}
 // var mPathParamCountry = &sync.Mutex{}
 
-func PrepareCache() {
-  go func() {
-    log.Println("CacheUserVisits BEGIN")
-    for id := range UserCache {
-      CacheUserVisits(id)
-    }
-    log.Println("CacheUserVisits END")
-
-    log.Println("CacheUserVisitsResponse BEGIN")
-    for id := range UserCache {
-      CacheUserVisitsResponse(id)
-    }
-    log.Println("CacheUserVisitsResponse END")
-  }()
-
-  // go func() {
-  //   log.Println("CacheUserVisitsByCountry BEGIN")
-  //   for id := range UserCache {
-  //     for country := range Countries {
-  //       CacheUserVisitsByCountry(id, country)
-  //     }
-  //   }
-  //   log.Println("CacheUserVisitsByCountry END")
-  //
-  //   log.Println("CacheUserVisitsByCountryResponse BEGIN")
-  //   for id := range UserCache {
-  //     for country := range Countries {
-  //       CacheUserVisitsByCountryResponse(id, country)
-  //     }
-  //   }
-  //   log.Println("CacheUserVisitsByCountryResponse END")
-  // }()
-
-  go func() {
-    log.Println("CacheLocationAvg BEGIN")
-    for id := range LocationCache {
-      CacheLocationAvg(id)
-    }
-    log.Println("CacheLocationAvg END")
-
-    log.Println("CacheLocationAvgResponse BEGIN")
-    for id := range LocationCache {
-      CacheLocationAvgResponse(id)
-    }
-    log.Println("CacheLocationAvgResponse END")
-  }()
-}
+// func PrepareCache() {
+//   go func() {
+//     // log.Println("CacheUserVisits BEGIN")
+//     // for id := range UserCache {
+//     //   CacheUserVisits(id)
+//     // }
+//     // log.Println("CacheUserVisits END")
+//
+//     // log.Println("CacheUserVisitsResponse BEGIN")
+//     // for id := range UserCache {
+//     //   CacheUserVisitsResponse(id)
+//     // }
+//     // log.Println("CacheUserVisitsResponse END")
+//   }()
+//
+//   // go func() {
+//   //   log.Println("CacheUserVisitsByCountry BEGIN")
+//   //   for id := range UserCache {
+//   //     for country := range Countries {
+//   //       CacheUserVisitsByCountry(id, country)
+//   //     }
+//   //   }
+//   //   log.Println("CacheUserVisitsByCountry END")
+//   //
+//   //   log.Println("CacheUserVisitsByCountryResponse BEGIN")
+//   //   for id := range UserCache {
+//   //     for country := range Countries {
+//   //       CacheUserVisitsByCountryResponse(id, country)
+//   //     }
+//   //   }
+//   //   log.Println("CacheUserVisitsByCountryResponse END")
+//   // }()
+//
+//   go func() {
+//     // log.Println("CacheLocationAvg BEGIN")
+//     // for id := range LocationCache {
+//     //   CacheLocationAvg(id)
+//     // }
+//     // log.Println("CacheLocationAvg END")
+//
+//     // log.Println("CacheLocationAvgResponse BEGIN")
+//     // for id := range LocationCache {
+//     //   CacheLocationAvgResponse(id)
+//     // }
+//     // log.Println("CacheLocationAvgResponse END")
+//   }()
+// }
 
 // func AddCountry(country string) {
 //   mCountries.Lock()
@@ -89,7 +92,7 @@ func PrepareCache() {
 //   mCountries.Unlock()
 // }
 
-func AddUserVisit(userID, visitID, oldUserID string) {
+func AddUserVisit(userID, visitID, oldUserID string, cache bool) {
   mUVMap.Lock()
   _, ok := UserVisitsMap[userID]
   if ok {
@@ -103,9 +106,18 @@ func AddUserVisit(userID, visitID, oldUserID string) {
     UserVisitsMap[oldUserID][visitID] = false
   }
   mUVMap.Unlock()
+
+  if cache {
+    CacheUserVisits(userID)
+    CacheUserVisitsResponse(userID)
+    if oldUserID != "" {
+      CacheUserVisits(oldUserID)
+      CacheUserVisitsResponse(oldUserID)
+    }
+  }
 }
 
-func AddLocationVisit(locationID, visitID, oldLocationID string) {
+func AddLocationVisit(locationID, visitID, oldLocationID string, cache bool) {
   mLVMap.Lock()
   _, ok := LocationVisitsMap[locationID]
   if ok {
@@ -119,6 +131,15 @@ func AddLocationVisit(locationID, visitID, oldLocationID string) {
     LocationVisitsMap[oldLocationID][visitID] = false
   }
   mLVMap.Unlock()
+
+  if cache {
+    CacheLocationAvg(locationID)
+    CacheLocationAvgResponse(locationID)
+    if oldLocationID != "" {
+      CacheLocationAvg(oldLocationID)
+      CacheLocationAvgResponse(oldLocationID)
+    }
+  }
 }
 
 func GetLocation(id string) *structs.Location {
@@ -179,6 +200,7 @@ func GetUserVisitsEntities(id string) []*structs.UserVisit {
   for _, visitID := range GetUserVisitsIDs(id) {
     v := GetVisit(visitID)
     if v == nil {
+      // TODO fix
       log.Println(id, visitID)
       continue
     }
@@ -229,6 +251,7 @@ func GetLocationVisitsEntities(id string) []*structs.LocationVisit {
   for _, visitID := range GetLocationVisitsIDs(id) {
     v := GetVisit(visitID)
     if v == nil {
+      // TODO fix
       log.Println(id, visitID)
       continue
     }
@@ -251,14 +274,17 @@ func GetLocationVisitsEntities(id string) []*structs.LocationVisit {
 }
 
 func PathExists(path []byte) bool {
+  // TODO Possible lock because of simultaneous read and update on 2-nd stage
   return PathCache[string(path)] != nil
 }
 
 func PathParamExists(path []byte) bool {
+  // No block because it must be used only on 3-rd stage
   return PathParamCache[string(path)] != nil
 }
 
 func GetCachedUserVisits(id string) []*structs.UserVisit {
+  // No block because it must be used only on 3-rd stage
   return UserVisitsCache[id]
 }
 
@@ -271,6 +297,7 @@ func GetCachedUserVisits(id string) []*structs.UserVisit {
 // }
 
 func GetCachedLocationAvg(id string) []*structs.LocationVisit {
+  // No block because it must be used only on 3-rd stage
   return LocationAvgCache[id]
 }
 
@@ -449,8 +476,9 @@ func CacheVisitResponse(id string, e *structs.Visit) {
 }
 
 func CacheUserVisits(id string) {
-  // No block because it must be prepared in PrepareCache() only
+  mUserVisits.Lock()
   UserVisitsCache[id] = GetUserVisitsEntities(id)
+  mUserVisits.Unlock()
 }
 
 // func CacheUserVisitsByCountry(id string, country string) {
@@ -459,13 +487,15 @@ func CacheUserVisits(id string) {
 //     m = map[string][]*structs.Visit{}
 //     UserVisitsByCountryCache[id] = m
 //   }
-//   // No block because it must be prepared in PrepareCache() only
+//   mUserVisitsByCountry.Lock()
 //   m[country] = GetUserVisitsEntitiesByCountry(id, country)
+//   mUserVisitsByCountry.Unlock()
 // }
 
 func CacheLocationAvg(id string) {
-  // No block because it must be prepared in PrepareCache() only
+  mLocationAvg.Lock()
   LocationAvgCache[id] = GetLocationVisitsEntities(id)
+  mLocationAvg.Unlock()
 }
 
 func CacheUserVisitsResponse(id string) {
