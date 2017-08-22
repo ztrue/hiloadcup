@@ -38,53 +38,53 @@ var mPath = &sync.RWMutex{}
 var mPathParam = &sync.RWMutex{}
 // var mPathParamCountry = &sync.RWMutex{}
 
-// func PrepareCache() {
-//   go func() {
-//     // log.Println("CacheUserVisits BEGIN")
-//     // for id := range UserCache {
-//     //   CacheUserVisits(id)
-//     // }
-//     // log.Println("CacheUserVisits END")
-//
-//     // log.Println("CacheUserVisitsResponse BEGIN")
-//     // for id := range UserCache {
-//     //   CacheUserVisitsResponse(id)
-//     // }
-//     // log.Println("CacheUserVisitsResponse END")
-//   }()
-//
-//   // go func() {
-//   //   log.Println("CacheUserVisitsByCountry BEGIN")
-//   //   for id := range UserCache {
-//   //     for country := range Countries {
-//   //       CacheUserVisitsByCountry(id, country)
-//   //     }
-//   //   }
-//   //   log.Println("CacheUserVisitsByCountry END")
-//   //
-//   //   log.Println("CacheUserVisitsByCountryResponse BEGIN")
-//   //   for id := range UserCache {
-//   //     for country := range Countries {
-//   //       CacheUserVisitsByCountryResponse(id, country)
-//   //     }
-//   //   }
-//   //   log.Println("CacheUserVisitsByCountryResponse END")
-//   // }()
-//
-//   go func() {
-//     // log.Println("CacheLocationAvg BEGIN")
-//     // for id := range LocationCache {
-//     //   CacheLocationAvg(id)
-//     // }
-//     // log.Println("CacheLocationAvg END")
-//
-//     // log.Println("CacheLocationAvgResponse BEGIN")
-//     // for id := range LocationCache {
-//     //   CacheLocationAvgResponse(id)
-//     // }
-//     // log.Println("CacheLocationAvgResponse END")
-//   }()
-// }
+func PrepareCache() {
+  go func() {
+    log.Println("CacheUserVisits BEGIN")
+    for id := range UserCache {
+      CacheUserVisits(id)
+    }
+    log.Println("CacheUserVisits END")
+
+    log.Println("CacheUserVisitsResponse BEGIN")
+    for id := range UserCache {
+      CacheUserVisitsResponse(id)
+    }
+    log.Println("CacheUserVisitsResponse END")
+  }()
+
+  // go func() {
+  //   log.Println("CacheUserVisitsByCountry BEGIN")
+  //   for id := range UserCache {
+  //     for country := range Countries {
+  //       CacheUserVisitsByCountry(id, country)
+  //     }
+  //   }
+  //   log.Println("CacheUserVisitsByCountry END")
+  //
+  //   log.Println("CacheUserVisitsByCountryResponse BEGIN")
+  //   for id := range UserCache {
+  //     for country := range Countries {
+  //       CacheUserVisitsByCountryResponse(id, country)
+  //     }
+  //   }
+  //   log.Println("CacheUserVisitsByCountryResponse END")
+  // }()
+
+  go func() {
+    log.Println("CacheLocationAvg BEGIN")
+    for id := range LocationCache {
+      CacheLocationAvg(id)
+    }
+    log.Println("CacheLocationAvg END")
+
+    log.Println("CacheLocationAvgResponse BEGIN")
+    for id := range LocationCache {
+      CacheLocationAvgResponse(id)
+    }
+    log.Println("CacheLocationAvgResponse END")
+  }()
+}
 
 // func AddCountry(country string) {
 //   mCountries.Lock()

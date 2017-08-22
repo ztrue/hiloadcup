@@ -12,8 +12,8 @@ func main() {
     log.Fatal(err)
   }
 
-  // log.Println("CACHE")
-  // PrepareCache()
+  log.Println("CACHE")
+  PrepareCache()
 
   log.Println("SERVE")
   log.Fatal(Serve(":80"))
