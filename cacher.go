@@ -92,7 +92,7 @@ func PrepareCache() {
 //   mCountries.Unlock()
 // }
 
-func AddUserVisit(userID, visitID, oldUserID string, cache bool) {
+func AddUserVisit(userID, visitID, oldUserID string) {
   mUVMap.Lock()
   _, ok := UserVisitsMap[userID]
   if ok {
@@ -106,18 +106,9 @@ func AddUserVisit(userID, visitID, oldUserID string, cache bool) {
     UserVisitsMap[oldUserID][visitID] = false
   }
   mUVMap.Unlock()
-
-  if cache {
-    CacheUserVisits(userID)
-    CacheUserVisitsResponse(userID)
-    if oldUserID != "" {
-      CacheUserVisits(oldUserID)
-      CacheUserVisitsResponse(oldUserID)
-    }
-  }
 }
 
-func AddLocationVisit(locationID, visitID, oldLocationID string, cache bool) {
+func AddLocationVisit(locationID, visitID, oldLocationID string) {
   mLVMap.Lock()
   _, ok := LocationVisitsMap[locationID]
   if ok {
@@ -131,15 +122,6 @@ func AddLocationVisit(locationID, visitID, oldLocationID string, cache bool) {
     LocationVisitsMap[oldLocationID][visitID] = false
   }
   mLVMap.Unlock()
-
-  if cache {
-    CacheLocationAvg(locationID)
-    CacheLocationAvgResponse(locationID)
-    if oldLocationID != "" {
-      CacheLocationAvg(oldLocationID)
-      CacheLocationAvgResponse(oldLocationID)
-    }
-  }
 }
 
 func GetLocation(id string) *structs.Location {

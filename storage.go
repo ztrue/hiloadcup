@@ -79,9 +79,23 @@ func AddVisitProcess(e *structs.VisitUp, cache bool) {
     Mark: *e.Mark,
   }
   id := IDToStr(v.ID)
-  AddLocationVisit(IDToStr(v.Location), id, "", cache)
-  AddUserVisit(IDToStr(v.User), id, "", cache)
+  locationID := IDToStr(v.Location)
+  userID := IDToStr(v.User)
+  AddLocationVisit(locationID, id, "")
+  AddUserVisit(userID, id, "")
   CacheVisitResponse(id, v)
+
+  if cache {
+    go func() {
+      CacheUserVisits(userID)
+      CacheUserVisitsResponse(userID)
+    }()
+
+    go func() {
+      CacheLocationAvg(locationID)
+      CacheLocationAvgResponse(locationID)
+    }()
+  }
 }
 
 func UpdateLocationAsync(bid []byte, e *structs.LocationUp) int {
@@ -178,12 +192,36 @@ func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
     se.Mark = *e.Mark
   }
   if se.Location != oldLocationID {
-    AddLocationVisit(IDToStr(se.Location), id, IDToStr(oldLocationID), true)
+    AddLocationVisit(IDToStr(se.Location), id, IDToStr(oldLocationID))
   }
   if se.User != oldUserID {
-    AddUserVisit(IDToStr(se.User), id, IDToStr(oldUserID), true)
+    AddUserVisit(IDToStr(se.User), id, IDToStr(oldUserID))
   }
   CacheVisitResponse(id, se)
+
+  if se.Location != oldLocationID {
+    go func() {
+      CacheLocationAvg(IDToStr(se.Location))
+      CacheLocationAvgResponse(IDToStr(se.Location))
+    }()
+
+    go func() {
+      CacheLocationAvg(IDToStr(oldLocationID))
+      CacheLocationAvgResponse(IDToStr(oldLocationID))
+    }()
+  }
+
+  if se.User != oldUserID {
+    go func() {
+      CacheUserVisits(IDToStr(se.User))
+      CacheUserVisitsResponse(IDToStr(se.User))
+    }()
+
+    go func() {
+      CacheUserVisits(IDToStr(oldUserID))
+      CacheUserVisitsResponse(IDToStr(oldUserID))
+    }()
+  }
 }
 
 func IDToStr(id uint32) string {
