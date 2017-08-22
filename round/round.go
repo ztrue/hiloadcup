@@ -1,5 +1,5 @@
 // https://gist.github.com/DavidVaini/10308388
-package main
+package round
 
 import (
   "math"

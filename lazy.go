@@ -3,12 +3,13 @@ package main
 import (
   "strconv"
   "github.com/valyala/fasthttp"
+  "app/db"
   "app/structs"
 )
 
 func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) {
   id := string(bid)
-  if GetUser(id) == nil {
+  if db.GetUser(id) == nil {
     return nil, 404
   }
   var err error
@@ -51,17 +52,17 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
   // } else {
   //  visits = GetCachedUserVisits(id)
   // }
-  return ConvertUserVisits(GetCachedUserVisits(id), func(uv *structs.UserVisit) bool {
-    if hasFromDate && uv.VisitedAt <= fromDate {
+  return db.GetUserVisitsList(id, func(e *structs.UserVisit) bool {
+    if hasFromDate && e.VisitedAt <= fromDate {
       return false
     }
-    if hasToDate && uv.VisitedAt >= toDate {
+    if hasToDate && e.VisitedAt >= toDate {
       return false
     }
-    if hasToDistance && uv.Distance >= toDistance {
+    if hasToDistance && e.Distance >= toDistance {
       return false
     }
-    if hasCountry && uv.Country != country {
+    if hasCountry && e.Country != country {
       return false
     }
     return true
@@ -70,7 +71,7 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
 
 func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
   id := string(bid)
-  if GetLocation(id) == nil {
+  if db.GetLocation(id) == nil {
     return nil, 404
   }
   var err error
@@ -115,20 +116,20 @@ func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
     }
   }
 
-  return ConvertLocationAvg(GetCachedLocationAvg(id), func(lv *structs.LocationVisit) bool {
-    if hasFromDate && lv.VisitedAt <= fromDate {
+  return db.GetLocationAvg(id, func(e *structs.LocationVisit) bool {
+    if hasFromDate && e.VisitedAt <= fromDate {
       return false
     }
-    if hasToDate && lv.VisitedAt >= toDate {
+    if hasToDate && e.VisitedAt >= toDate {
       return false
     }
-    if hasGender && lv.Gender != gender {
+    if hasGender && e.Gender != gender {
       return false
     }
-    if hasFromAge && lv.Age < fromAge {
+    if hasFromAge && e.Age < fromAge {
       return false
     }
-    if hasToAge && lv.Age >= toAge {
+    if hasToAge && e.Age >= toAge {
       return false
     }
     return true

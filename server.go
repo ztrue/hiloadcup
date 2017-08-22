@@ -5,6 +5,7 @@ import (
   "log"
   "github.com/valyala/fasthttp"
   "github.com/pquerna/ffjson/ffjson"
+  "app/db"
   "app/structs"
 )
 
@@ -21,35 +22,24 @@ var routeVisitPrefix = []byte("/visits/")
 var routeVisitsSuffix = []byte("/visits")
 var routeAvgSuffix = []byte("/avg")
 
-// var lastPost = time.Time{}
-
 func Serve(addr string) error {
-  // go func() {
-  //   for {
-  //     if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
-  //       log.Println("CACHE UPDATE BEGIN")
-  //       PrepareCache()
-  //       break
-  //     }
-  //     time.Sleep(time.Second)
-  //   }
-  // }()
   log.Println("Server started at " + addr)
   return fasthttp.ListenAndServe(addr, route)
 }
 
 func route(ctx *fasthttp.RequestCtx) {
   path := ctx.Path()
+  pathStr := string(path)
 
   if bytes.Equal(ctx.Method(), methodGet) {
-    cached := GetCachedPath(path)
+    cached := db.GetPath(pathStr)
     if cached != nil {
       ResponseBytes(ctx, cached)
       return
     }
 
     if bytes.HasSuffix(path, routeVisitsSuffix) {
-      if !PathParamExists(path) {
+      if !db.PathParamExists(pathStr) {
         ResponseStatus(ctx, 404)
         return
       }
@@ -58,7 +48,7 @@ func route(ctx *fasthttp.RequestCtx) {
       if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
       // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
       //   if !v.Has("country") {
-          cached := GetCachedPathParam(path)
+          cached := db.GetPathParam(pathStr)
           if cached == nil {
             log.Println(string(path))
           } else {
@@ -66,7 +56,7 @@ func route(ctx *fasthttp.RequestCtx) {
             return
           }
         // } else {
-        //   cached := GetCachedPathParamCountry(path, v.Peek("country"))
+        //   cached := db.GetCachedPathParamCountry(pathStr, v.Peek("country"))
         //   if cached == nil {
         //     log.Println(string(path))
         //   } else {
@@ -80,14 +70,14 @@ func route(ctx *fasthttp.RequestCtx) {
     }
 
     if bytes.HasSuffix(path, routeAvgSuffix) {
-      if !PathParamExists(path) {
+      if !db.PathParamExists(pathStr) {
         ResponseStatus(ctx, 404)
         return
       }
 
       v := ctx.URI().QueryArgs()
       if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
-        cached := GetCachedPathParam(path)
+        cached := db.GetPathParam(pathStr)
         if cached == nil {
           log.Println(string(path))
         } else {
@@ -99,8 +89,6 @@ func route(ctx *fasthttp.RequestCtx) {
       return
     }
   } else {
-    // lastPost = time.Now()
-
     if bytes.Equal(path, routeNewLocation) {
       ActionNewLocation(ctx)
       return
@@ -114,7 +102,7 @@ func route(ctx *fasthttp.RequestCtx) {
       return
     }
 
-    if PathExists(path) {
+    if db.PathExists(pathStr) {
       if bytes.HasPrefix(path, routeLocationPrefix) {
         ActionUpdateLocation(ctx, path[11:])
         return
@@ -135,29 +123,23 @@ func route(ctx *fasthttp.RequestCtx) {
 
 func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
   ctx.SetStatusCode(status)
-  // ctx.SetConnectionClose()
 }
 
 func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
   ctx.SetBody(body)
-  // ctx.SetConnectionClose()
 }
 
 func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsList) {
   ctx.SetStatusCode(200)
   if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
     ResponseStatus(ctx, 400)
-    return
   }
-  // ctx.SetConnectionClose()
 }
 
 func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg) {
   ctx.SetStatusCode(200)
   if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
     ResponseStatus(ctx, 400)
-    return
   }
-  // ctx.SetConnectionClose()
 }

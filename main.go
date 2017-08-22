@@ -2,10 +2,20 @@ package main
 
 import (
   "log"
+  "app/db"
 )
 
 func main() {
   log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds | log.Llongfile | log.LUTC)
+
+  log.Println("PREPARE")
+  db.PrepareLocations()
+  db.PrepareUsers()
+  db.PrepareVisits()
+  db.PrepareUserVisits()
+  db.PrepareLocationVisits()
+  db.PreparePaths()
+  db.PreparePathParams()
 
   log.Println("IMPORT")
   if err := Import("/tmp/unzip"); err != nil {

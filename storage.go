@@ -2,60 +2,68 @@ package main
 
 import (
   "log"
-  "strconv"
+  "app/db"
   "app/structs"
 )
 
 func AddLocation(e *structs.LocationUp) {
-  AddLocationProcess(e)
+  AddLocationProcess(e, false)
 }
 
 func AddLocationAsync(e *structs.LocationUp) int {
   if e.Validate() != 200 {
     return 400
   }
-  go AddLocationProcess(e)
+  go AddLocationProcess(e, true)
   return 200
 }
 
-func AddLocationProcess(e *structs.LocationUp) {
-  CacheLocationResponse(
-    IDToStr(*e.ID),
-    &structs.Location{
-      ID: *e.ID,
-      Place: *e.Place,
-      Country: *e.Country,
-      City: *e.City,
-      Distance: *e.Distance,
-    },
-  )
+func AddLocationProcess(e *structs.LocationUp, cache bool) {
+  se := &structs.Location{
+    ID: *e.ID,
+    Place: *e.Place,
+    Country: *e.Country,
+    City: *e.City,
+    Distance: *e.Distance,
+  }
+  id := db.IDToStr(se.ID)
+  db.AddLocation(id, se)
+  db.AddPathLocation(id, se)
+  if cache {
+    db.CalculateLocationVisit(id)
+    db.AddPathParamLocationAvg(id, db.GetLocationAvg(id, nil))
+  }
 }
 
 func AddUser(e *structs.UserUp) {
-  AddUserProcess(e)
+  AddUserProcess(e, false)
 }
 
 func AddUserAsync(e *structs.UserUp) int {
   if e.Validate() != 200 {
     return 400
   }
-  go AddUserProcess(e)
+  go AddUserProcess(e, true)
   return 200
 }
 
-func AddUserProcess(e *structs.UserUp) {
-  CacheUserResponse(
-    IDToStr(*e.ID),
-    &structs.User{
-      ID: *e.ID,
-      Email: *e.Email,
-      FirstName: *e.FirstName,
-      LastName: *e.LastName,
-      Gender: *e.Gender,
-      BirthDate: *e.BirthDate,
-      Age: e.CalculateAge(),
-    },
-  )
+func AddUserProcess(e *structs.UserUp, cache bool) {
+  se := &structs.User{
+    ID: *e.ID,
+    Email: *e.Email,
+    FirstName: *e.FirstName,
+    LastName: *e.LastName,
+    Gender: *e.Gender,
+    BirthDate: *e.BirthDate,
+    Age: e.CalculateAge(),
+  }
+  id := db.IDToStr(se.ID)
+  db.AddUser(id, se)
+  db.AddPathUser(id, se)
+  if cache {
+    db.CalculateUserVisit(id)
+    db.AddPathParamUserVisits(id, db.GetUserVisitsList(id, nil))
+  }
 }
 
 func AddVisit(e *structs.VisitUp) {
@@ -71,30 +79,23 @@ func AddVisitAsync(e *structs.VisitUp) int {
 }
 
 func AddVisitProcess(e *structs.VisitUp, cache bool) {
-  v := &structs.Visit{
+  se := &structs.Visit{
     ID: *e.ID,
     Location: *e.Location,
     User: *e.User,
     VisitedAt: *e.VisitedAt,
     Mark: *e.Mark,
   }
-  id := IDToStr(v.ID)
-  locationID := IDToStr(v.Location)
-  userID := IDToStr(v.User)
-  AddLocationVisit(locationID, id, "")
-  AddUserVisit(userID, id, "")
-  CacheVisitResponse(id, v)
-
+  id := db.IDToStr(se.ID)
+  locationID := db.IDToStr(se.Location)
+  userID := db.IDToStr(se.User)
+  db.AddVisit(id, se)
+  db.AddPathVisit(id, se)
+  db.AddLocationVisit(locationID, id, "", cache)
+  db.AddUserVisit(userID, id, "", cache)
   if cache {
-    go func() {
-      CacheUserVisits(userID)
-      CacheUserVisitsResponse(userID)
-    }()
-
-    go func() {
-      CacheLocationAvg(locationID)
-      CacheLocationAvgResponse(locationID)
-    }()
+    db.AddPathParamLocationAvg(locationID, db.GetLocationAvg(locationID, nil))
+    db.AddPathParamUserVisits(userID, db.GetUserVisitsList(userID, nil))
   }
 }
 
@@ -108,24 +109,25 @@ func UpdateLocationAsync(bid []byte, e *structs.LocationUp) int {
 
 func UpdateLocationProcess(bid []byte, e *structs.LocationUp) {
   id := string(bid)
-  se := GetLocationSafe(id)
-  if se == nil {
-    log.Println(id)
-    return
-  }
-  if e.Place != nil {
-    se.Place = *e.Place
-  }
-  if e.Country != nil {
-    se.Country = *e.Country
-  }
-  if e.City != nil {
-    se.City = *e.City
-  }
-  if e.Distance != nil {
-    se.Distance = *e.Distance
-  }
-  CacheLocationResponse(id, se)
+  se := db.UpdateLocation(id, func(se *structs.Location) {
+    if se == nil {
+      log.Println(id)
+      return
+    }
+    if e.Place != nil {
+      se.Place = *e.Place
+    }
+    if e.Country != nil {
+      se.Country = *e.Country
+    }
+    if e.City != nil {
+      se.City = *e.City
+    }
+    if e.Distance != nil {
+      se.Distance = *e.Distance
+    }
+  })
+  db.AddPathLocation(id, se)
 }
 
 func UpdateUserAsync(bid []byte, e *structs.UserUp) int {
@@ -138,28 +140,29 @@ func UpdateUserAsync(bid []byte, e *structs.UserUp) int {
 
 func UpdateUserProcess(bid []byte, e *structs.UserUp) {
   id := string(bid)
-  se := GetUserSafe(id)
-  if se == nil {
-    log.Println(id)
-    return
-  }
-  if e.Email != nil {
-    se.Email = *e.Email
-  }
-  if e.FirstName != nil {
-    se.FirstName = *e.FirstName
-  }
-  if e.LastName != nil {
-    se.LastName = *e.LastName
-  }
-  if e.Gender != nil {
-    se.Gender = *e.Gender
-  }
-  if e.BirthDate != nil {
-    se.BirthDate = *e.BirthDate
-    se.Age = e.CalculateAge()
-  }
-  CacheUserResponse(id, se)
+  se := db.UpdateUser(id, func(se *structs.User) {
+    if se == nil {
+      log.Println(id)
+      return
+    }
+    if e.Email != nil {
+      se.Email = *e.Email
+    }
+    if e.FirstName != nil {
+      se.FirstName = *e.FirstName
+    }
+    if e.LastName != nil {
+      se.LastName = *e.LastName
+    }
+    if e.Gender != nil {
+      se.Gender = *e.Gender
+    }
+    if e.BirthDate != nil {
+      se.BirthDate = *e.BirthDate
+      se.Age = e.CalculateAge()
+    }
+  })
+  db.AddPathUser(id, se)
 }
 
 func UpdateVisitAsync(bid []byte, e *structs.VisitUp) int {
@@ -172,58 +175,44 @@ func UpdateVisitAsync(bid []byte, e *structs.VisitUp) int {
 
 func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
   id := string(bid)
-  se := GetVisitSafe(id)
-  if se == nil {
-    log.Println(id)
-    return
-  }
-  oldLocationID := se.Location
-  oldUserID := se.User
-  if e.Location != nil {
-    se.Location = *e.Location
-  }
-  if e.User != nil {
-    se.User = *e.User
-  }
-  if e.VisitedAt != nil {
-    se.VisitedAt = *e.VisitedAt
-  }
-  if e.Mark != nil {
-    se.Mark = *e.Mark
-  }
-  if se.Location != oldLocationID {
-    AddLocationVisit(IDToStr(se.Location), id, IDToStr(oldLocationID))
-  }
-  if se.User != oldUserID {
-    AddUserVisit(IDToStr(se.User), id, IDToStr(oldUserID))
-  }
-  CacheVisitResponse(id, se)
+  oldLocationIDUint := uint32(0)
+  oldUserIDUint := uint32(0)
+  se := db.UpdateVisit(id, func(se *structs.Visit) {
+    if se == nil {
+      log.Println(id)
+      return
+    }
+    oldLocationIDUint = se.Location
+    oldUserIDUint = se.User
+    if e.Location != nil {
+      se.Location = *e.Location
+    }
+    if e.User != nil {
+      se.User = *e.User
+    }
+    if e.VisitedAt != nil {
+      se.VisitedAt = *e.VisitedAt
+    }
+    if e.Mark != nil {
+      se.Mark = *e.Mark
+    }
+  })
+  db.AddPathVisit(id, se)
 
-  if se.Location != oldLocationID {
-    go func() {
-      CacheLocationAvg(IDToStr(se.Location))
-      CacheLocationAvgResponse(IDToStr(se.Location))
-    }()
-
-    go func() {
-      CacheLocationAvg(IDToStr(oldLocationID))
-      CacheLocationAvgResponse(IDToStr(oldLocationID))
-    }()
+  if se.Location != oldLocationIDUint {
+    locationID := db.IDToStr(se.Location)
+    oldLocationID := db.IDToStr(oldLocationIDUint)
+    db.AddLocationVisit(locationID, id, oldLocationID, true)
+    db.AddPathParamLocationAvg(locationID, db.GetLocationAvg(locationID, nil))
+    db.AddPathParamLocationAvg(oldLocationID, db.GetLocationAvg(oldLocationID, nil))
   }
 
-  if se.User != oldUserID {
-    go func() {
-      CacheUserVisits(IDToStr(se.User))
-      CacheUserVisitsResponse(IDToStr(se.User))
-    }()
-
-    go func() {
-      CacheUserVisits(IDToStr(oldUserID))
-      CacheUserVisitsResponse(IDToStr(oldUserID))
-    }()
+  // TODO async
+  if se.User != oldUserIDUint {
+    userID := db.IDToStr(se.User)
+    oldUserID := db.IDToStr(oldUserIDUint)
+    db.AddUserVisit(userID, id, oldUserID, true)
+    db.AddPathParamUserVisits(userID, db.GetUserVisitsList(userID, nil))
+    db.AddPathParamUserVisits(oldUserID, db.GetUserVisitsList(oldUserID, nil))
   }
-}
-
-func IDToStr(id uint32) string {
-  return strconv.FormatUint(uint64(id), 10)
 }
