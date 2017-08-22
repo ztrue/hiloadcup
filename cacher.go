@@ -25,18 +25,18 @@ var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 // var PathParamCountryCache = map[string]map[string][]byte{}
 
-var mUVMap = &sync.Mutex{}
-var mLVMap = &sync.Mutex{}
-// var mCountries = &sync.Mutex{}
-var mLocation = &sync.Mutex{}
-var mUser = &sync.Mutex{}
-var mVisit = &sync.Mutex{}
-var mUserVisits = &sync.Mutex{}
-// var mUserVisitsByCountry = &sync.Mutex{}
-var mLocationAvg = &sync.Mutex{}
-var mPath = &sync.Mutex{}
-var mPathParam = &sync.Mutex{}
-// var mPathParamCountry = &sync.Mutex{}
+var mUVMap = &sync.RWMutex{}
+var mLVMap = &sync.RWMutex{}
+// var mCountries = &sync.RWMutex{}
+var mLocation = &sync.RWMutex{}
+var mUser = &sync.RWMutex{}
+var mVisit = &sync.RWMutex{}
+var mUserVisits = &sync.RWMutex{}
+// var mUserVisitsByCountry = &sync.RWMutex{}
+var mLocationAvg = &sync.RWMutex{}
+var mPath = &sync.RWMutex{}
+var mPathParam = &sync.RWMutex{}
+// var mPathParamCountry = &sync.RWMutex{}
 
 // func PrepareCache() {
 //   go func() {
@@ -155,23 +155,23 @@ func GetVisit(id string) *structs.Visit {
 }
 
 func GetLocationSafe(id string) *structs.Location {
-  mLocation.Lock()
+  mLocation.RLock()
   e := LocationCache[id]
-  mLocation.Unlock()
+  mLocation.RUnlock()
   return e
 }
 
 func GetUserSafe(id string) *structs.User {
-  mUser.Lock()
+  mUser.RLock()
   e := UserCache[id]
-  mUser.Unlock()
+  mUser.RUnlock()
   return e
 }
 
 func GetVisitSafe(id string) *structs.Visit {
-  mVisit.Lock()
+  mVisit.RLock()
   e := VisitCache[id]
-  mVisit.Unlock()
+  mVisit.RUnlock()
   return e
 }
 
@@ -482,12 +482,12 @@ func CacheUserVisits(id string) {
 }
 
 // func CacheUserVisitsByCountry(id string, country string) {
+//   mUserVisitsByCountry.Lock()
 //   m, ok := UserVisitsByCountryCache[id]
 //   if !ok {
 //     m = map[string][]*structs.Visit{}
 //     UserVisitsByCountryCache[id] = m
 //   }
-//   mUserVisitsByCountry.Lock()
 //   m[country] = GetUserVisitsEntitiesByCountry(id, country)
 //   mUserVisitsByCountry.Unlock()
 // }
