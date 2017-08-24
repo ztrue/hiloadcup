@@ -29,10 +29,10 @@ func AddLocationProcess(e *structs.LocationUp, cache bool) {
   id := db.IDToStr(se.ID)
   db.AddLocation(id, se)
   db.AddPathLocation(id, se)
-  if cache {
-    db.CalculateLocationVisit(id)
-    db.AddPathParamLocationAvg(id, db.GetLocationAvg(id, nil))
-  }
+  // if cache {
+  //   db.CalculateLocationVisit(id)
+  //   db.AddPathParamLocationAvg(id, db.GetLocationAvg(id, nil))
+  // }
 }
 
 func AddUser(e *structs.UserUp) {
@@ -60,10 +60,10 @@ func AddUserProcess(e *structs.UserUp, cache bool) {
   id := db.IDToStr(se.ID)
   db.AddUser(id, se)
   db.AddPathUser(id, se)
-  if cache {
-    db.CalculateUserVisit(id)
-    db.AddPathParamUserVisits(id, db.GetUserVisitsList(id, nil))
-  }
+  // if cache {
+  //   db.CalculateUserVisit(id)
+  //   db.AddPathParamUserVisits(id, db.GetUserVisitsList(id, nil))
+  // }
 }
 
 func AddVisit(e *structs.VisitUp) {
@@ -93,10 +93,10 @@ func AddVisitProcess(e *structs.VisitUp, cache bool) {
   db.AddPathVisit(id, se)
   db.AddLocationVisit(locationID, id, "", cache)
   db.AddUserVisit(userID, id, "", cache)
-  if cache {
-    db.AddPathParamLocationAvg(locationID, db.GetLocationAvg(locationID, nil))
-    db.AddPathParamUserVisits(userID, db.GetUserVisitsList(userID, nil))
-  }
+  // if cache {
+  //   db.AddPathParamLocationAvg(locationID, db.GetLocationAvg(locationID, nil))
+  //   db.AddPathParamUserVisits(userID, db.GetUserVisitsList(userID, nil))
+  // }
 }
 
 func UpdateLocationAsync(bid []byte, e *structs.LocationUp) int {
@@ -129,21 +129,21 @@ func UpdateLocationProcess(bid []byte, e *structs.LocationUp) {
   })
   db.AddPathLocation(id, se)
 
-  if e.Place != nil || e.Country != nil || e.Distance != nil {
-    userIDs := []string{}
-    for _, locationVisitID := range db.GetLocationVisitsIDs(id) {
-      db.IterateUserVisitsIndex(func(userID, visitID string) bool {
-        if locationVisitID == visitID {
-          userIDs = append(userIDs, userID)
-          return false
-        }
-        return true
-      })
-    }
-    for _, userID := range userIDs {
-      db.CalculateUserVisit(userID)
-    }
-  }
+  // if e.Place != nil || e.Country != nil || e.Distance != nil {
+  //   userIDs := []string{}
+  //   for _, locationVisitID := range db.GetLocationVisitsIDs(id) {
+  //     db.IterateUserVisitsIndex(func(userID, visitID string) bool {
+  //       if locationVisitID == visitID {
+  //         userIDs = append(userIDs, userID)
+  //         return false
+  //       }
+  //       return true
+  //     })
+  //   }
+  //   for _, userID := range userIDs {
+  //     db.CalculateUserVisit(userID)
+  //   }
+  // }
 }
 
 func UpdateUserAsync(bid []byte, e *structs.UserUp) int {
@@ -180,21 +180,21 @@ func UpdateUserProcess(bid []byte, e *structs.UserUp) {
   })
   db.AddPathUser(id, se)
 
-  if e.Gender != nil || e.BirthDate != nil {
-    locationIDs := []string{}
-    for _, userVisitID := range db.GetUserVisitsIDs(id) {
-      db.IterateLocationVisitsIndex(func(locationID, visitID string) bool {
-        if userVisitID == visitID {
-          locationIDs = append(locationIDs, locationID)
-          return false
-        }
-        return true
-      })
-    }
-    for _, locationID := range locationIDs {
-      db.CalculateLocationVisit(locationID)
-    }
-  }
+  // if e.Gender != nil || e.BirthDate != nil {
+  //   locationIDs := []string{}
+  //   for _, userVisitID := range db.GetUserVisitsIDs(id) {
+  //     db.IterateLocationVisitsIndex(func(locationID, visitID string) bool {
+  //       if userVisitID == visitID {
+  //         locationIDs = append(locationIDs, locationID)
+  //         return false
+  //       }
+  //       return true
+  //     })
+  //   }
+  //   for _, locationID := range locationIDs {
+  //     db.CalculateLocationVisit(locationID)
+  //   }
+  // }
 }
 
 func UpdateVisitAsync(bid []byte, e *structs.VisitUp) int {
@@ -235,8 +235,8 @@ func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
     locationID := db.IDToStr(se.Location)
     oldLocationID := db.IDToStr(oldLocationIDUint)
     db.AddLocationVisit(locationID, id, oldLocationID, true)
-    db.AddPathParamLocationAvg(locationID, db.GetLocationAvg(locationID, nil))
-    db.AddPathParamLocationAvg(oldLocationID, db.GetLocationAvg(oldLocationID, nil))
+    // db.AddPathParamLocationAvg(locationID, db.GetLocationAvg(locationID, nil))
+    // db.AddPathParamLocationAvg(oldLocationID, db.GetLocationAvg(oldLocationID, nil))
   }
 
   // TODO async
@@ -244,7 +244,7 @@ func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
     userID := db.IDToStr(se.User)
     oldUserID := db.IDToStr(oldUserIDUint)
     db.AddUserVisit(userID, id, oldUserID, true)
-    db.AddPathParamUserVisits(userID, db.GetUserVisitsList(userID, nil))
-    db.AddPathParamUserVisits(oldUserID, db.GetUserVisitsList(oldUserID, nil))
+    // db.AddPathParamUserVisits(userID, db.GetUserVisitsList(userID, nil))
+    // db.AddPathParamUserVisits(oldUserID, db.GetUserVisitsList(oldUserID, nil))
   }
 }

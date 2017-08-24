@@ -1,9 +1,9 @@
 package db
 
-import "log"
+// import "log"
 import "sync"
-import "github.com/pquerna/ffjson/ffjson"
-import "app/structs"
+// import "github.com/pquerna/ffjson/ffjson"
+// import "app/structs"
 
 var cPathParams *PathParamsCollection
 
@@ -55,20 +55,20 @@ func PathParamExists(id string) bool {
   return cPathParams.Exists(id)
 }
 
-func AddPathParamUserVisits(id string, data *structs.UserVisitsList) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println("/users/" + id + "/visits")
-    return
-  }
-  AddPathParam("/users/" + id + "/visits", body)
-}
-
-func AddPathParamLocationAvg(id string, data *structs.LocationAvg) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println("/locations/" + id + "/avg")
-    return
-  }
-  AddPathParam("/locations/" + id + "/avg", body)
-}
+// func AddPathParamUserVisits(id string, data *structs.UserVisitsList) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println("/users/" + id + "/visits")
+//     return
+//   }
+//   AddPathParam("/users/" + id + "/visits", body)
+// }
+//
+// func AddPathParamLocationAvg(id string, data *structs.LocationAvg) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println("/locations/" + id + "/avg")
+//     return
+//   }
+//   AddPathParam("/locations/" + id + "/avg", body)
+// }

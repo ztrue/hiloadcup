@@ -40,15 +40,15 @@ func (cLocationVisits *LocationVisitsCollection) addIndex(locationID, visitID, o
 func (cLocationVisits *LocationVisitsCollection) Add(locationID, visitID, oldLocationID string, cache bool) {
   cLocationVisits.addIndex(locationID, visitID, oldLocationID)
 
-  if cache {
-    cLocationVisits.Calculate(locationID)
-    if oldLocationID != "" {
-      cLocationVisits.Calculate(oldLocationID)
-    }
-  }
+  // if cache {
+  //   cLocationVisits.Calculate(locationID)
+  //   if oldLocationID != "" {
+  //     cLocationVisits.Calculate(oldLocationID)
+  //   }
+  // }
 }
 
-func (cLocationVisits *LocationVisitsCollection) Calculate(locationID string) {
+func (cLocationVisits *LocationVisitsCollection) CalculateResult(locationID string) []*structs.LocationVisit {
   locationVisits := LocationVisitsByDate{}
   cLocationVisits.m.RLock()
   for visitID, ok := range cLocationVisits.i[locationID] {
@@ -77,17 +77,22 @@ func (cLocationVisits *LocationVisitsCollection) Calculate(locationID string) {
   }
   cLocationVisits.m.RUnlock()
   sort.Sort(locationVisits)
-
-  cLocationVisits.m.Lock()
-  cLocationVisits.e[locationID] = locationVisits
-  cLocationVisits.m.Unlock()
+  return locationVisits
 }
 
+// func (cLocationVisits *LocationVisitsCollection) Calculate(locationID string) {
+//   locationVisits := cLocationVisits.CalculateResult(locationID)
+//   cLocationVisits.m.Lock()
+//   cLocationVisits.e[locationID] = locationVisits
+//   cLocationVisits.m.Unlock()
+// }
+
 func (cLocationVisits *LocationVisitsCollection) Get(id string) []*structs.LocationVisit {
-  cLocationVisits.m.RLock()
-  e := cLocationVisits.e[id]
-  cLocationVisits.m.RUnlock()
-  return e
+  return cLocationVisits.CalculateResult(id)
+  // cLocationVisits.m.RLock()
+  // e := cLocationVisits.e[id]
+  // cLocationVisits.m.RUnlock()
+  // return e
 }
 
 func (cLocationVisits *LocationVisitsCollection) GetIDs(id string) []string {
@@ -159,9 +164,9 @@ func AddLocationVisit(locationID, visitID, oldLocationID string, cache bool) {
   cLocationVisits.Add(locationID, visitID, oldLocationID, cache)
 }
 
-func CalculateLocationVisit(id string) {
-  cLocationVisits.Calculate(id)
-}
+// func CalculateLocationVisit(id string) {
+//   cLocationVisits.Calculate(id)
+// }
 
 func GetLocationVisits(id string) []*structs.LocationVisit {
   return cLocationVisits.Get(id)

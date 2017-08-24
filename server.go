@@ -45,26 +45,26 @@ func route(ctx *fasthttp.RequestCtx) {
       }
 
       v := ctx.URI().QueryArgs()
-      if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
-      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
-      //   if !v.Has("country") {
-          cached := db.GetPathParam(pathStr)
-          if cached == nil {
-            log.Println(string(path))
-          } else {
-            ResponseBytes(ctx, cached)
-            return
-          }
-        // } else {
-        //   cached := db.GetCachedPathParamCountry(pathStr, v.Peek("country"))
-        //   if cached == nil {
-        //     log.Println(string(path))
-        //   } else {
-        //     ResponseBytes(ctx, cached)
-        //     return
-        //   }
-        // }
-      }
+      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
+      // // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
+      // //   if !v.Has("country") {
+      //     cached := db.GetPathParam(pathStr)
+      //     if cached == nil {
+      //       log.Println(string(path))
+      //     } else {
+      //       ResponseBytes(ctx, cached)
+      //       return
+      //     }
+      //   // } else {
+      //   //   cached := db.GetCachedPathParamCountry(pathStr, v.Peek("country"))
+      //   //   if cached == nil {
+      //   //     log.Println(string(path))
+      //   //   } else {
+      //   //     ResponseBytes(ctx, cached)
+      //   //     return
+      //   //   }
+      //   // }
+      // }
       ActionGetUserVisits(ctx, path[7:len(path) - 7], v)
       return
     }
@@ -76,15 +76,15 @@ func route(ctx *fasthttp.RequestCtx) {
       }
 
       v := ctx.URI().QueryArgs()
-      if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
-        cached := db.GetPathParam(pathStr)
-        if cached == nil {
-          log.Println(string(path))
-        } else {
-          ResponseBytes(ctx, cached)
-          return
-        }
-      }
+      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
+      //   cached := db.GetPathParam(pathStr)
+      //   if cached == nil {
+      //     log.Println(string(path))
+      //   } else {
+      //     ResponseBytes(ctx, cached)
+      //     return
+      //   }
+      // }
       ActionGetLocationAvg(ctx, path[11:len(path) - 4], v)
       return
     }

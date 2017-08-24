@@ -39,15 +39,15 @@ func (cUserVisits *UserVisitsCollection) addIndex(userID, visitID, oldUserID str
 func (cUserVisits *UserVisitsCollection) Add(userID, visitID, oldUserID string, cache bool) {
   cUserVisits.addIndex(userID, visitID, oldUserID)
 
-  if cache {
-    cUserVisits.Calculate(userID)
-    if oldUserID != "" {
-      cUserVisits.Calculate(oldUserID)
-    }
-  }
+  // if cache {
+  //   cUserVisits.Calculate(userID)
+  //   if oldUserID != "" {
+  //     cUserVisits.Calculate(oldUserID)
+  //   }
+  // }
 }
 
-func (cUserVisits *UserVisitsCollection) Calculate(userID string) {
+func (cUserVisits *UserVisitsCollection) CalculateResult(userID string) []*structs.UserVisit {
   userVisits := UserVisitsByDate{}
   cUserVisits.m.RLock()
   for visitID, ok := range cUserVisits.i[userID] {
@@ -77,17 +77,22 @@ func (cUserVisits *UserVisitsCollection) Calculate(userID string) {
   }
   cUserVisits.m.RUnlock()
   sort.Sort(userVisits)
-
-  cUserVisits.m.Lock()
-  cUserVisits.e[userID] = userVisits
-  cUserVisits.m.Unlock()
+  return userVisits
 }
 
+// func (cUserVisits *UserVisitsCollection) Calculate(userID string) {
+//   userVisits := cUserVisits.CalculateResult(userID)
+//   cUserVisits.m.Lock()
+//   cUserVisits.e[userID] = userVisits
+//   cUserVisits.m.Unlock()
+// }
+
 func (cUserVisits *UserVisitsCollection) Get(id string) []*structs.UserVisit {
-  cUserVisits.m.RLock()
-  e := cUserVisits.e[id]
-  cUserVisits.m.RUnlock()
-  return e
+  return cUserVisits.CalculateResult(id)
+  // cUserVisits.m.RLock()
+  // e := cUserVisits.e[id]
+  // cUserVisits.m.RUnlock()
+  // return e
 }
 
 func (cUserVisits *UserVisitsCollection) GetIDs(id string) []string {
@@ -159,9 +164,9 @@ func AddUserVisit(userID, visitID, oldUserID string, cache bool) {
   cUserVisits.Add(userID, visitID, oldUserID, cache)
 }
 
-func CalculateUserVisit(id string) {
-  cUserVisits.Calculate(id)
-}
+// func CalculateUserVisit(id string) {
+//   cUserVisits.Calculate(id)
+// }
 
 func GetUserVisits(id string) []*structs.UserVisit {
   return cUserVisits.Get(id)
