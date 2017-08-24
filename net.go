@@ -14,14 +14,23 @@ func ListenAndServe(addr string, handler func(net.Conn)) error {
 }
 
 func serve(ln net.Listener, handler func(net.Conn)) error {
+  jobs := make(chan net.Conn, 100)
+
+  for i := 0; i < 4; i++ {
+    go worker(jobs, handler)
+  }
+
   for {
     c, err := ln.Accept()
     if err != nil {
       return err
     }
-    go func(c net.Conn) {
-      defer c.Close()
-      handler(c)
-    }(c)
+    jobs <- c
+  }
+}
+
+func worker(jobs chan net.Conn, handler func(net.Conn)) {
+  for c := range jobs {
+    handler(c)
   }
 }

@@ -56,6 +56,8 @@ func Serve(addr string) error {
   }()
   log.Println("Server started at " + addr)
   return ListenAndServe(addr, func(c net.Conn) {
+    c.Write(OKEmptyJSON)
+    return
     // TODO Lazy body parsing
     buf := make([]byte, 4096)
     _, err := c.Read(buf)
