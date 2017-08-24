@@ -34,3 +34,17 @@ func main() {
 // TODO Check why there is a first long request
 // TODO Fix countries index
 // TODO Parallel operation if possible
+
+// FIXME User update BirthDate, Gender => fix LocationVisits
+// ids = []
+// for v range visitsU[userID] {
+//   for locationID, visits range visitsL {
+//     if visits[v.ID] {
+//       ids = append(ids, locationID)
+//     }
+//   }
+// }
+// for _, locationID range ids {
+//   locationVisits.Calculate(locationID)
+// }
+// FIXME Location update Plcae, Country, Distance => fix UserVisits
