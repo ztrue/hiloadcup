@@ -27,12 +27,12 @@ var lastPost = time.Time{}
 func Serve(addr string) error {
   go func() {
     for {
-      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > 1 {
+      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > .1 {
         log.Println("CACHE UPDATE BEGIN")
         PrepareCache()
         break
       }
-      time.Sleep(time.Second)
+      time.Sleep(100 * time.Millisecond)
     }
   }()
   log.Println("Server started at " + addr)
