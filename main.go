@@ -34,6 +34,7 @@ func main() {
 // TODO Check why there is a first long request
 // TODO Fix countries index
 // TODO Parallel operation if possible
+// TODO POST workers pool
 
 // FIXME User update BirthDate, Gender => fix LocationVisits
 // ids = []

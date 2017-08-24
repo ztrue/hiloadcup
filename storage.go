@@ -128,6 +128,22 @@ func UpdateLocationProcess(bid []byte, e *structs.LocationUp) {
     }
   })
   db.AddPathLocation(id, se)
+
+  if e.Place != nil || e.Country != nil || e.Distance != nil {
+    userIDs := []string{}
+    for _, locationVisitID := range db.GetLocationVisitsIDs(id) {
+      db.IterateUserVisitsIndex(func(userID, visitID string) bool {
+        if locationVisitID == visitID {
+          userIDs = append(userIDs, userID)
+          return false
+        }
+        return true
+      })
+    }
+    for _, userID := range userIDs {
+      db.CalculateUserVisit(userID)
+    }
+  }
 }
 
 func UpdateUserAsync(bid []byte, e *structs.UserUp) int {
@@ -163,6 +179,22 @@ func UpdateUserProcess(bid []byte, e *structs.UserUp) {
     }
   })
   db.AddPathUser(id, se)
+
+  if e.Gender != nil || e.BirthDate != nil {
+    locationIDs := []string{}
+    for _, userVisitID := range db.GetUserVisitsIDs(id) {
+      db.IterateLocationVisitsIndex(func(locationID, visitID string) bool {
+        if userVisitID == visitID {
+          locationIDs = append(locationIDs, locationID)
+          return false
+        }
+        return true
+      })
+    }
+    for _, locationID := range locationIDs {
+      db.CalculateLocationVisit(locationID)
+    }
+  }
 }
 
 func UpdateVisitAsync(bid []byte, e *structs.VisitUp) int {

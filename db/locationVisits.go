@@ -90,6 +90,21 @@ func (cLocationVisits *LocationVisitsCollection) Get(id string) []*structs.Locat
   return e
 }
 
+func (cLocationVisits *LocationVisitsCollection) GetIDs(id string) []string {
+  ids := []string{}
+  cLocationVisits.m.RLock()
+  m := cLocationVisits.i[id]
+  if m != nil {
+    for visitID, ok := range m {
+      if ok {
+        ids = append(ids, visitID)
+      }
+    }
+  }
+  cLocationVisits.m.RUnlock()
+  return ids
+}
+
 func (cLocationVisits *LocationVisitsCollection) GetFiltered(
   id string,
   filter func(*structs.LocationVisit) bool,
@@ -114,6 +129,28 @@ func (cLocationVisits *LocationVisitsCollection) Exists(id string) bool {
   return e
 }
 
+func (cLocationVisits *LocationVisitsCollection) Iterate(iter func(string, []*structs.LocationVisit)) {
+  cLocationVisits.m.RLock()
+  for id, e := range cLocationVisits.e {
+    iter(id, e)
+  }
+  cLocationVisits.m.RUnlock()
+}
+
+func (cLocationVisits *LocationVisitsCollection) IterateIndex(iter func(locationID, visitID string) bool) {
+  cLocationVisits.m.RLock()
+  for locationID, m := range cLocationVisits.i {
+    for visitID, ok := range m {
+      if ok {
+        if !iter(locationID, visitID) {
+          break
+        }
+      }
+    }
+  }
+  cLocationVisits.m.RUnlock()
+}
+
 func PrepareLocationVisits() {
   cLocationVisits = NewLocationVisitsCollection()
 }
@@ -128,6 +165,10 @@ func CalculateLocationVisit(id string) {
 
 func GetLocationVisits(id string) []*structs.LocationVisit {
   return cLocationVisits.Get(id)
+}
+
+func GetLocationVisitsIDs(id string) []string {
+  return cLocationVisits.GetIDs(id)
 }
 
 func (cLocationVisits *LocationVisitsCollection) GetFilteredLocationVisits(
@@ -158,6 +199,14 @@ func GetLocationAvg(
 
 func LocationVisitExists(id string) bool {
   return cLocationVisits.Exists(id)
+}
+
+func IterateLocationVisits(iter func(string, []*structs.LocationVisit)) {
+  cLocationVisits.Iterate(iter)
+}
+
+func IterateLocationVisitsIndex(iter func(locationID, visitID string) bool) {
+  cLocationVisits.IterateIndex(iter)
 }
 
 type LocationVisitsByDate []*structs.LocationVisit
