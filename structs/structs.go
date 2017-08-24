@@ -5,6 +5,14 @@ import (
 )
 
 type Location struct {
+  ID uint32 `json:"id"`
+  Place string `json:"place"`
+  Country string `json:"country"`
+  City string `json:"city"`
+  Distance uint32 `json:"distance"`
+}
+
+type LocationUp struct {
   ID *uint32 `json:"id"`
   Place *string `json:"place"`
   Country *string `json:"country"`
@@ -13,16 +21,33 @@ type Location struct {
 }
 
 type User struct {
+  ID uint32 `json:"id"`
+  Email string `json:"email"`
+  FirstName string `json:"first_name"`
+  LastName string `json:"last_name"`
+  Gender string `json:"gender"`
+  BirthDate int `json:"birth_date"`
+  Age int `json:"-"`
+}
+
+type UserUp struct {
   ID *uint32 `json:"id"`
   Email *string `json:"email"`
   FirstName *string `json:"first_name"`
   LastName *string `json:"last_name"`
   Gender *string `json:"gender"`
   BirthDate *int `json:"birth_date"`
-  Age int `json:"-"`
 }
 
 type Visit struct {
+  ID uint32 `json:"id"`
+  Location uint32 `json:"location"`
+  User uint32 `json:"user"`
+  VisitedAt int `json:"visited_at"`
+  Mark int `json:"mark"`
+}
+
+type VisitUp struct {
   ID *uint32 `json:"id"`
   Location *uint32 `json:"location"`
   User *uint32 `json:"user"`
@@ -31,9 +56,18 @@ type Visit struct {
 }
 
 type UserVisit struct {
-  Mark *int `json:"mark"`
-  VisitedAt *int `json:"visited_at"`
-  Place *string `json:"place"`
+  Mark int `json:"mark"`
+  VisitedAt int `json:"visited_at"`
+  Place string `json:"place"`
+  Country string `json:"-"`
+  Distance uint32 `json:"-"`
+}
+
+type LocationVisit struct {
+  VisitedAt int `json:"-"`
+  Age int `json:"-"`
+  Gender string `json:"-"`
+  Mark int `json:"-"`
 }
 
 type LocationAvg struct {
@@ -45,9 +79,9 @@ type UserVisitsList struct {
 }
 
 type Payload struct {
-  Locations []*Location `json:"locations"`
-  Users []*User `json:"users"`
-  Visits []*Visit `json:"visits"`
+  Locations []*LocationUp `json:"locations"`
+  Users []*UserUp `json:"users"`
+  Visits []*VisitUp `json:"visits"`
 }
 
 func ValidateGender(g *string) int {
@@ -75,7 +109,7 @@ func ValidateRange(val *int, from, to int) int {
   return 200
 }
 
-func (l *Location) Validate() int {
+func (l *LocationUp) Validate() int {
   if l.Country != nil {
     if ValidateLength(l.Country, 50) != 200 {
       return 200
@@ -87,7 +121,7 @@ func (l *Location) Validate() int {
   return 200
 }
 
-func (u *User) Validate() int {
+func (u *UserUp) Validate() int {
   if u.Email != nil {
     if ValidateLength(u.Email, 100) != 200 {
       return 400
@@ -109,21 +143,21 @@ func (u *User) Validate() int {
   return 200
 }
 
-func (u *User) CalculateAge() int {
+func (u *UserUp) CalculateAge() int {
   return u.CalculateAge1()
 }
 
-func (u *User) CalculateAge1() int {
-  bd := time.Unix(int64(*(u.BirthDate)), 0)
+func (u *UserUp) CalculateAge1() int {
+  bd := time.Unix(int64(*u.BirthDate), 0)
   return Age(bd)
 }
 
-func (u *User) CalculateAge2() int {
+func (u *UserUp) CalculateAge2() int {
   // Seconds in year 365.24 * 24 * 60 * 60 = 31556736
-  return (int(time.Now().Unix()) - *(u.BirthDate)) / 31556736
+  return (int(time.Now().Unix()) - *u.BirthDate) / 31556736
 }
 
-func (v *Visit) Validate() int {
+func (v *VisitUp) Validate() int {
   if v.Mark != nil {
     return ValidateMark(v.Mark)
   }

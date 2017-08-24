@@ -7,7 +7,7 @@ import (
 )
 
 func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) {
-  id := ParseID(bid)
+  id := string(bid)
   if GetUser(id) == nil {
     return nil, 404
   }
@@ -51,17 +51,17 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
   // } else {
   //  visits = GetCachedUserVisits(id)
   // }
-  return ConvertUserVisits(GetCachedUserVisits(id), func(v *structs.Visit, l *structs.Location) bool {
-    if hasFromDate && *(v.VisitedAt) <= fromDate {
+  return ConvertUserVisits(GetCachedUserVisits(id), func(uv *structs.UserVisit) bool {
+    if hasFromDate && uv.VisitedAt <= fromDate {
       return false
     }
-    if hasToDate && *(v.VisitedAt) >= toDate {
+    if hasToDate && uv.VisitedAt >= toDate {
       return false
     }
-    if hasToDistance && *(l.Distance) >= toDistance {
+    if hasToDistance && uv.Distance >= toDistance {
       return false
     }
-    if hasCountry && *(l.Country) != country {
+    if hasCountry && uv.Country != country {
       return false
     }
     return true
@@ -69,7 +69,7 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
 }
 
 func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
-  id := ParseID(bid)
+  id := string(bid)
   if GetLocation(id) == nil {
     return nil, 404
   }
@@ -115,20 +115,20 @@ func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
     }
   }
 
-  return ConvertLocationAvg(GetCachedLocationAvg(id), func(v *structs.Visit, u *structs.User) bool {
-    if hasFromDate && *(v.VisitedAt) <= fromDate {
+  return ConvertLocationAvg(GetCachedLocationAvg(id), func(lv *structs.LocationVisit) bool {
+    if hasFromDate && lv.VisitedAt <= fromDate {
       return false
     }
-    if hasToDate && *(v.VisitedAt) >= toDate {
+    if hasToDate && lv.VisitedAt >= toDate {
       return false
     }
-    if hasGender && *(u.Gender) != gender {
+    if hasGender && lv.Gender != gender {
       return false
     }
-    if hasFromAge && u.Age < fromAge {
+    if hasFromAge && lv.Age < fromAge {
       return false
     }
-    if hasToAge && u.Age >= toAge {
+    if hasToAge && lv.Age >= toAge {
       return false
     }
     return true

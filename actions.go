@@ -30,7 +30,7 @@ func ActionGetLocationAvg(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args
 }
 
 func ActionNewLocation(ctx *fasthttp.RequestCtx) {
-  e := &structs.Location{}
+  e := &structs.LocationUp{}
   if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -43,7 +43,7 @@ func ActionNewLocation(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewLocation2(c net.Conn, body []byte) {
-  e := &structs.Location{}
+  e := &structs.LocationUp{}
   if checkRequestLocation(body, e) != 200 {
     c.Write(BadRequest)
     return
@@ -56,7 +56,7 @@ func ActionNewLocation2(c net.Conn, body []byte) {
 }
 
 func ActionNewUser(ctx *fasthttp.RequestCtx) {
-  e := &structs.User{}
+  e := &structs.UserUp{}
   if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -69,7 +69,7 @@ func ActionNewUser(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewUser2(c net.Conn, body []byte) {
-  e := &structs.User{}
+  e := &structs.UserUp{}
   if checkRequestUser(body, e) != 200 {
     c.Write(BadRequest)
     return
@@ -82,7 +82,7 @@ func ActionNewUser2(c net.Conn, body []byte) {
 }
 
 func ActionNewVisit(ctx *fasthttp.RequestCtx) {
-  e := &structs.Visit{}
+  e := &structs.VisitUp{}
   if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -95,7 +95,7 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionNewVisit2(c net.Conn, body []byte) {
-  e := &structs.Visit{}
+  e := &structs.VisitUp{}
   if checkRequestVisit(body, e) != 200 {
     c.Write(BadRequest)
     return
@@ -108,7 +108,7 @@ func ActionNewVisit2(c net.Conn, body []byte) {
 }
 
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
-  e := &structs.Location{}
+  e := &structs.LocationUp{}
   if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -121,7 +121,7 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateLocation2(c net.Conn, body, bid []byte) {
-  e := &structs.Location{}
+  e := &structs.LocationUp{}
   if checkRequestLocation(body, e) != 200 {
     c.Write(BadRequest)
     return
@@ -134,7 +134,7 @@ func ActionUpdateLocation2(c net.Conn, body, bid []byte) {
 }
 
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
-  e := &structs.User{}
+  e := &structs.UserUp{}
   if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -147,7 +147,7 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateUser2(c net.Conn, body, bid []byte) {
-  e := &structs.User{}
+  e := &structs.UserUp{}
   if checkRequestUser(body, e) != 200 {
     c.Write(BadRequest)
     return
@@ -160,7 +160,7 @@ func ActionUpdateUser2(c net.Conn, body, bid []byte) {
 }
 
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
-  e := &structs.Visit{}
+  e := &structs.VisitUp{}
   if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
     return
@@ -173,7 +173,7 @@ func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateVisit2(c net.Conn, body, bid []byte) {
-  e := &structs.Visit{}
+  e := &structs.VisitUp{}
   if checkRequestVisit(body, e) != 200 {
     c.Write(BadRequest)
     return
@@ -185,7 +185,7 @@ func ActionUpdateVisit2(c net.Conn, body, bid []byte) {
   c.Write(OKEmptyJSON)
 }
 
-func checkRequestLocation(body []byte, e *structs.Location) int {
+func checkRequestLocation(body []byte, e *structs.LocationUp) int {
   if checkNils(body) != 200 {
     return 400
   }
@@ -198,7 +198,7 @@ func checkRequestLocation(body []byte, e *structs.Location) int {
   return 200
 }
 
-func checkRequestUser(body []byte, e *structs.User) int {
+func checkRequestUser(body []byte, e *structs.UserUp) int {
   if checkNils(body) != 200 {
     return 400
   }
@@ -211,7 +211,7 @@ func checkRequestUser(body []byte, e *structs.User) int {
   return 200
 }
 
-func checkRequestVisit(body []byte, e *structs.Visit) int {
+func checkRequestVisit(body []byte, e *structs.VisitUp) int {
   if checkNils(body) != 200 {
     return 400
   }

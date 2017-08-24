@@ -1,7 +1,6 @@
 package main
 
 import (
-  "fmt"
   "log"
   "sync"
   "sort"
@@ -10,18 +9,18 @@ import (
 )
 
 // user ID => visit ID => true
-var UserVisitsMap = map[uint32]map[uint32]bool{}
+var UserVisitsMap = map[string]map[string]bool{}
 // location ID => visit ID => true
-var LocationVisitsMap = map[uint32]map[uint32]bool{}
+var LocationVisitsMap = map[string]map[string]bool{}
 
 // var Countries = map[string]bool{}
 
-var LocationCache = map[uint32]*structs.Location{}
-var UserCache = map[uint32]*structs.User{}
-var VisitCache = map[uint32]*structs.Visit{}
-var UserVisitsCache = map[uint32][]*structs.Visit{}
-// var UserVisitsByCountryCache = map[uint32]map[string][]*structs.Visit{}
-var LocationAvgCache = map[uint32][]*structs.Visit{}
+var LocationCache = map[string]*structs.Location{}
+var UserCache = map[string]*structs.User{}
+var VisitCache = map[string]*structs.Visit{}
+var UserVisitsCache = map[string][]*structs.UserVisit{}
+// var UserVisitsByCountryCache = map[string]map[string][]*structs.Visit{}
+var LocationAvgCache = map[string][]*structs.LocationVisit{}
 var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 // var PathParamCountryCache = map[string]map[string][]byte{}
@@ -90,47 +89,47 @@ func PrepareCache() {
 //   mCountries.Unlock()
 // }
 
-func AddUserVisit(userID, visitID, oldUserID uint32) {
+func AddUserVisit(userID, visitID, oldUserID string) {
   mUVMap.Lock()
   _, ok := UserVisitsMap[userID]
   if ok {
     UserVisitsMap[userID][visitID] = true
   } else {
-    UserVisitsMap[userID] = map[uint32]bool{
+    UserVisitsMap[userID] = map[string]bool{
       visitID: true,
     }
   }
-  if oldUserID > 0 {
+  if oldUserID != "" {
     UserVisitsMap[oldUserID][visitID] = false
   }
   mUVMap.Unlock()
 }
 
-func AddLocationVisit(locationID, visitID, oldLocationID uint32) {
+func AddLocationVisit(locationID, visitID, oldLocationID string) {
   mLVMap.Lock()
   _, ok := LocationVisitsMap[locationID]
   if ok {
     LocationVisitsMap[locationID][visitID] = true
   } else {
-    LocationVisitsMap[locationID] = map[uint32]bool{
+    LocationVisitsMap[locationID] = map[string]bool{
       visitID: true,
     }
   }
-  if oldLocationID > 0 {
+  if oldLocationID != "" {
     LocationVisitsMap[oldLocationID][visitID] = false
   }
   mLVMap.Unlock()
 }
 
-func GetLocation(id uint32) *structs.Location {
+func GetLocation(id string) *structs.Location {
   return LocationCache[id]
 }
 
-func GetUser(id uint32) *structs.User {
+func GetUser(id string) *structs.User {
   return UserCache[id]
 }
 
-func GetVisit(id uint32) *structs.Visit {
+func GetVisit(id string) *structs.Visit {
   return VisitCache[id]
 }
 
@@ -155,8 +154,8 @@ func GetVisitSafe(id uint32) *structs.Visit {
   return e
 }
 
-func GetUserVisitsIDs(userID uint32) []uint32 {
-  ids := []uint32{}
+func GetUserVisitsIDs(userID string) []string {
+  ids := []string{}
   for visitID, ok := range UserVisitsMap[userID] {
     if ok {
       ids = append(ids, visitID)
@@ -165,8 +164,8 @@ func GetUserVisitsIDs(userID uint32) []uint32 {
   return ids
 }
 
-func GetLocationVisitsIDs(locationID uint32) []uint32 {
-  ids := []uint32{}
+func GetLocationVisitsIDs(locationID string) []string {
+  ids := []string{}
   for visitID, ok := range LocationVisitsMap[locationID] {
     if ok {
       ids = append(ids, visitID)
@@ -175,21 +174,35 @@ func GetLocationVisitsIDs(locationID uint32) []uint32 {
   return ids
 }
 
-func GetUserVisitsEntities(id uint32) []*structs.Visit {
-  visits := VisitsByDate{}
+func GetUserVisitsEntities(id string) []*structs.UserVisit {
+  userVisits := UserVisitsByDate{}
   for _, visitID := range GetUserVisitsIDs(id) {
     v := GetVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
     }
-    visits = append(visits, v)
+    l := GetLocation(IDToStr(v.Location))
+    if l == nil {
+      log.Println(id, visitID, v.Location)
+      continue
+    }
+    userVisits = append(
+      userVisits,
+      &structs.UserVisit{
+        Mark: v.Mark,
+        VisitedAt: v.VisitedAt,
+        Place: l.Place,
+        Country: l.Country,
+        Distance: l.Distance,
+      },
+    )
   }
-  sort.Sort(visits)
-  return visits
+  sort.Sort(userVisits)
+  return userVisits
 }
 
-// func GetUserVisitsEntitiesByCountry(id uint32, country string) []*structs.Visit {
+// func GetUserVisitsEntitiesByCountry(id string, country string) []*structs.Visit {
 //   visits := VisitsByDate{}
 //   for _, visitID := range GetUserVisitsIDs(id) {
 //     v := GetVisit(visitID)
@@ -197,12 +210,12 @@ func GetUserVisitsEntities(id uint32) []*structs.Visit {
 //       log.Println(id, country, visitID)
 //       continue
 //     }
-//     l := GetLocation(*(v.Location))
+//     l := GetLocation(IDToStr(v.Location))
 //     if v == nil {
-//       log.Println(id, country, visitID, *(v.Location))
+//       log.Println(id, country, visitID, v.Location)
 //       continue
 //     }
-//     if *(l.Country) != country {
+//     if l.Country != country {
 //       continue
 //     }
 //     visits = append(visits, v)
@@ -211,17 +224,30 @@ func GetUserVisitsEntities(id uint32) []*structs.Visit {
 //   return visits
 // }
 
-func GetLocationVisitsEntities(id uint32) []*structs.Visit {
-  visits := []*structs.Visit{}
+func GetLocationVisitsEntities(id string) []*structs.LocationVisit {
+  locationVisits := []*structs.LocationVisit{}
   for _, visitID := range GetLocationVisitsIDs(id) {
     v := GetVisit(visitID)
     if v == nil {
       log.Println(id, visitID)
       continue
     }
-    visits = append(visits, v)
+    u := GetUser(IDToStr(v.User))
+    if u == nil {
+      log.Println(id, visitID, v.User)
+      continue
+    }
+    locationVisits = append(
+      locationVisits,
+      &structs.LocationVisit {
+        VisitedAt: v.VisitedAt,
+        Age: u.Age,
+        Gender: u.Gender,
+        Mark: v.Mark,
+      },
+    )
   }
-  return visits
+  return locationVisits
 }
 
 func PathExists(path []byte) bool {
@@ -232,11 +258,11 @@ func PathParamExists(path []byte) bool {
   return PathParamCache[string(path)] != nil
 }
 
-func GetCachedUserVisits(id uint32) []*structs.Visit {
+func GetCachedUserVisits(id string) []*structs.UserVisit {
   return UserVisitsCache[id]
 }
 
-// func GetCachedUserVisitsByCountry(id uint32, country string) []*structs.Visit {
+// func GetCachedUserVisitsByCountry(id string, country string) []*structs.Visit {
 //   m := UserVisitsByCountryCache[id]
 //   if m == nil {
 //     return nil
@@ -244,7 +270,7 @@ func GetCachedUserVisits(id uint32) []*structs.Visit {
 //   return m[country]
 // }
 
-func GetCachedLocationAvg(id uint32) []*structs.Visit {
+func GetCachedLocationAvg(id string) []*structs.LocationVisit {
   return LocationAvgCache[id]
 }
 
@@ -374,7 +400,7 @@ func CachePathParamLocationAvg(path string, data *structs.LocationAvg) {
 // }
 
 
-func CacheLocation(id uint32) {
+func CacheLocation(id string) {
   e := GetLocationSafe(id)
   if e == nil {
     log.Println(id)
@@ -383,7 +409,7 @@ func CacheLocation(id uint32) {
   CacheLocationResponse(id, e)
 }
 
-func CacheUser(id uint32) {
+func CacheUser(id string) {
   e := GetUserSafe(id)
   if e == nil {
     log.Println(id)
@@ -392,7 +418,7 @@ func CacheUser(id uint32) {
   CacheUserResponse(id, e)
 }
 
-func CacheVisit(id uint32) {
+func CacheVisit(id string) {
   e := GetVisitSafe(id)
   if e == nil {
     log.Println(id)
@@ -401,33 +427,33 @@ func CacheVisit(id uint32) {
   CacheVisitResponse(id, e)
 }
 
-func CacheLocationResponse(id uint32, e *structs.Location) {
+func CacheLocationResponse(id string, e *structs.Location) {
   mLocation.Lock()
   LocationCache[id] = e
   mLocation.Unlock()
-  CachePathLocation(fmt.Sprintf("/locations/%d", id), e)
+  CachePathLocation("/locations/" + id, e)
 }
 
-func CacheUserResponse(id uint32, e *structs.User) {
+func CacheUserResponse(id string, e *structs.User) {
   mUser.Lock()
   UserCache[id] = e
   mUser.Unlock()
-  CachePathUser(fmt.Sprintf("/users/%d", id), e)
+  CachePathUser("/users/" + id, e)
 }
 
-func CacheVisitResponse(id uint32, e *structs.Visit) {
+func CacheVisitResponse(id string, e *structs.Visit) {
   mVisit.Lock()
   VisitCache[id] = e
   mVisit.Unlock()
-  CachePathVisit(fmt.Sprintf("/visits/%d", id), e)
+  CachePathVisit("/visits/" + id, e)
 }
 
-func CacheUserVisits(id uint32) {
+func CacheUserVisits(id string) {
   // No block because it must be prepared in PrepareCache() only
   UserVisitsCache[id] = GetUserVisitsEntities(id)
 }
 
-// func CacheUserVisitsByCountry(id uint32, country string) {
+// func CacheUserVisitsByCountry(id string, country string) {
 //   m, ok := UserVisitsByCountryCache[id]
 //   if !ok {
 //     m = map[string][]*structs.Visit{}
@@ -437,88 +463,72 @@ func CacheUserVisits(id uint32) {
 //   m[country] = GetUserVisitsEntitiesByCountry(id, country)
 // }
 
-func CacheLocationAvg(id uint32) {
+func CacheLocationAvg(id string) {
   // No block because it must be prepared in PrepareCache() only
   LocationAvgCache[id] = GetLocationVisitsEntities(id)
 }
 
-func CacheUserVisitsResponse(id uint32) {
+func CacheUserVisitsResponse(id string) {
   CachePathParamUserVisits(
-    fmt.Sprintf("/users/%d/visits", id),
-    ConvertUserVisits(GetCachedUserVisits(id), func(v *structs.Visit, l *structs.Location) bool {
+    "/users/" + id + "/visits",
+    ConvertUserVisits(GetCachedUserVisits(id), func(*structs.UserVisit) bool {
       return true
     }),
   )
 }
 
-// func CacheUserVisitsByCountryResponse(id uint32, country string) {
-//   visits := GetCachedUserVisitsByCountry(id, country)
-//   userVisits := ConvertUserVisits(visits, func(v *structs.Visit, l *structs.Location) bool {
-//     return true
-//   })
-//   path := fmt.Sprintf("/users/%d/visits", id)
-//   CachePathParamCountryUserVisits(path, country, userVisits)
+// func CacheUserVisitsByCountryResponse(id string, country string) {
+//   CachePathParamCountryUserVisits(
+//     "/users/" + id + "/visits",
+//     country,
+//     ConvertUserVisits(GetCachedUserVisitsByCountry(id, country), func(*structs.UserVisit) bool {
+//       return true
+//     }),
+//   )
 // }
 
-func CacheLocationAvgResponse(id uint32) {
+func CacheLocationAvgResponse(id string) {
   CachePathParamLocationAvg(
-    fmt.Sprintf("/locations/%d/avg", id),
-    ConvertLocationAvg(GetCachedLocationAvg(id), func(v *structs.Visit, u *structs.User) bool {
+    "/locations/" + id + "/avg",
+    ConvertLocationAvg(GetCachedLocationAvg(id), func(*structs.LocationVisit) bool {
       return true
     }),
   )
 }
 
-type VisitsByDate []*structs.Visit
-func (v VisitsByDate) Len() int {
+type UserVisitsByDate []*structs.UserVisit
+func (v UserVisitsByDate) Len() int {
   return len(v)
 }
-func (v VisitsByDate) Swap(i, j int) {
+func (v UserVisitsByDate) Swap(i, j int) {
   v[i], v[j] = v[j], v[i]
 }
-func (v VisitsByDate) Less(i, j int) bool {
-  return *(v[i].VisitedAt) < *(v[j].VisitedAt)
+func (v UserVisitsByDate) Less(i, j int) bool {
+  return v[i].VisitedAt < v[j].VisitedAt
 }
 
-func ConvertUserVisits(visits []*structs.Visit, filter func(*structs.Visit, *structs.Location) bool) *structs.UserVisitsList {
+func ConvertUserVisits(allUserVisits []*structs.UserVisit, filter func(*structs.UserVisit) bool) *structs.UserVisitsList {
   userVisits := []*structs.UserVisit{}
-  for _, v := range visits {
-    l := GetLocation(*(v.Location))
-    if l == nil {
-      log.Println(*(v.Location))
+  for _, uv := range allUserVisits {
+    if !filter(uv) {
       continue
     }
-    if !filter(v, l) {
-      continue
-    }
-    userVisits = append(
-      userVisits,
-      &structs.UserVisit{
-        Mark: v.Mark,
-        VisitedAt: v.VisitedAt,
-        Place: l.Place,
-      },
-    )
+    userVisits = append(userVisits, uv)
   }
   return &structs.UserVisitsList{
     Visits: userVisits,
   }
 }
 
-func ConvertLocationAvg(visits []*structs.Visit, filter func(*structs.Visit, *structs.User) bool) *structs.LocationAvg {
+func ConvertLocationAvg(locationVisits []*structs.LocationVisit, filter func(*structs.LocationVisit) bool) *structs.LocationAvg {
   count := 0
   sum := 0
-  for _, v := range visits {
-    u := GetUser(*(v.User))
-    if u == nil {
-      log.Println(*(v.User))
-      continue
-    }
-    if !filter(v, u) {
+  for _, lv := range locationVisits {
+    if !filter(lv) {
       continue
     }
     count++
-    sum += *(v.Mark)
+    sum += lv.Mark
   }
   avg := float64(0)
   if count > 0 {
