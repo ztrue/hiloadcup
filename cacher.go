@@ -133,21 +133,21 @@ func GetVisit(id string) *structs.Visit {
   return VisitCache[id]
 }
 
-func GetLocationSafe(id uint32) *structs.Location {
+func GetLocationSafe(id string) *structs.Location {
   mLocation.RLock()
   e := LocationCache[id]
   mLocation.RUnlock()
   return e
 }
 
-func GetUserSafe(id uint32) *structs.User {
+func GetUserSafe(id string) *structs.User {
   mUser.RLock()
   e := UserCache[id]
   mUser.RUnlock()
   return e
 }
 
-func GetVisitSafe(id uint32) *structs.Visit {
+func GetVisitSafe(id string) *structs.Visit {
   mVisit.RLock()
   e := VisitCache[id]
   mVisit.RUnlock()
