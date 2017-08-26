@@ -21,27 +21,26 @@ func NewLocationVisitsCollection() *LocationVisitsCollection {
   }
 }
 
-func (cLocationVisits *LocationVisitsCollection) addIndex(locationID, visitID, oldLocationID string) {
+func PrepareLocationVisits() {
+  cLocationVisits = NewLocationVisitsCollection()
+}
+
+func AddLocationVisit(locationID, visitID, oldLocationID string) {
   cLocationVisits.m.Lock()
-  m := cLocationVisits.i[locationID]
-  if m == nil {
-    m = map[string]bool{}
-    cLocationVisits.i[locationID] = m
+  defer cLocationVisits.m.Unlock()
+  if cLocationVisits.i[locationID] == nil {
+    cLocationVisits.i[locationID] = map[string]bool{}
   }
-  m[visitID] = true
+  cLocationVisits.i[locationID][visitID] = true
   if oldLocationID != "" {
-    cLocationVisits.i[locationID][visitID] = false
+    cLocationVisits.i[oldLocationID][visitID] = false
   }
-  cLocationVisits.m.Unlock()
 }
 
-func (cLocationVisits *LocationVisitsCollection) Add(locationID, visitID, oldLocationID string) {
-  cLocationVisits.addIndex(locationID, visitID, oldLocationID)
-}
-
-func (cLocationVisits *LocationVisitsCollection) CalculateResult(locationID string) []*structs.LocationVisit {
+func GetLocationVisits(locationID string) []*structs.LocationVisit {
   locationVisits := LocationVisitsByDate{}
   cLocationVisits.m.RLock()
+  defer cLocationVisits.m.RUnlock()
   for visitID, ok := range cLocationVisits.i[locationID] {
     if !ok {
       continue
@@ -66,39 +65,19 @@ func (cLocationVisits *LocationVisitsCollection) CalculateResult(locationID stri
       },
     )
   }
-  cLocationVisits.m.RUnlock()
   sort.Sort(locationVisits)
   return locationVisits
 }
 
-func (cLocationVisits *LocationVisitsCollection) Get(id string) []*structs.LocationVisit {
-  return cLocationVisits.CalculateResult(id)
-}
-
-func (cLocationVisits *LocationVisitsCollection) GetIDs(id string) []string {
-  ids := []string{}
-  cLocationVisits.m.RLock()
-  m := cLocationVisits.i[id]
-  if m != nil {
-    for visitID, ok := range m {
-      if ok {
-        ids = append(ids, visitID)
-      }
-    }
-  }
-  cLocationVisits.m.RUnlock()
-  return ids
-}
-
-func (cLocationVisits *LocationVisitsCollection) GetFiltered(
+func GetFilteredLocationVisits(
   id string,
   filter func(*structs.LocationVisit) bool,
 ) []*structs.LocationVisit {
   if filter == nil {
-    return cLocationVisits.Get(id)
+    return GetLocationVisits(id)
   }
   locationVisits := []*structs.LocationVisit{}
-  for _, e := range cLocationVisits.Get(id) {
+  for _, e := range GetLocationVisits(id) {
     if !filter(e) {
       continue
     }
@@ -107,46 +86,13 @@ func (cLocationVisits *LocationVisitsCollection) GetFiltered(
   return locationVisits
 }
 
-func (cLocationVisits *LocationVisitsCollection) Exists(id string) bool {
-  cLocationVisits.m.RLock()
-  defer cLocationVisits.m.RUnlock()
-  return cLocationVisits.i[id] != nil
-}
-
-func PrepareLocationVisits() {
-  cLocationVisits = NewLocationVisitsCollection()
-}
-
-func AddLocationVisit(locationID, visitID, oldLocationID string) {
-  cLocationVisits.Add(locationID, visitID, oldLocationID)
-}
-
-// func CalculateLocationVisit(id string) {
-//   cLocationVisits.Calculate(id)
-// }
-
-func GetLocationVisits(id string) []*structs.LocationVisit {
-  return cLocationVisits.Get(id)
-}
-
-func GetLocationVisitsIDs(id string) []string {
-  return cLocationVisits.GetIDs(id)
-}
-
-func (cLocationVisits *LocationVisitsCollection) GetFilteredLocationVisits(
-  id string,
-  filter func(*structs.LocationVisit) bool,
-) []*structs.LocationVisit {
-  return cLocationVisits.GetFiltered(id, filter)
-}
-
 func GetLocationAvg(
   id string,
   filter func(*structs.LocationVisit) bool,
 ) *structs.LocationAvg {
   count := 0
   sum := 0
-  for _, lv := range cLocationVisits.GetFilteredLocationVisits(id, filter) {
+  for _, lv := range GetFilteredLocationVisits(id, filter) {
     count++
     sum += lv.Mark
   }
@@ -160,7 +106,9 @@ func GetLocationAvg(
 }
 
 func LocationVisitExists(id string) bool {
-  return cLocationVisits.Exists(id)
+  cLocationVisits.m.RLock()
+  defer cLocationVisits.m.RUnlock()
+  return cLocationVisits.i[id] != nil
 }
 
 type LocationVisitsByDate []*structs.LocationVisit

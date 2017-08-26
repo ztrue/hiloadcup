@@ -77,11 +77,9 @@ func AddVisitProcess(e *structs.VisitUp) {
     Mark: *e.Mark,
   }
   id := db.IDToStr(se.ID)
-  locationID := db.IDToStr(se.Location)
-  userID := db.IDToStr(se.User)
   db.AddVisit(id, se)
-  db.AddLocationVisit(locationID, id, "")
-  db.AddUserVisit(userID, id, "")
+  db.AddLocationVisit(db.IDToStr(se.Location), id, "")
+  db.AddUserVisit(db.IDToStr(se.User), id, "")
 }
 
 func UpdateLocationAsync(bid []byte, e *structs.LocationUp) int {
@@ -158,19 +156,17 @@ func UpdateVisitAsync(bid []byte, e *structs.VisitUp) int {
 
 func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
   id := string(bid)
-  oldLocationIDUint := uint32(0)
-  oldUserIDUint := uint32(0)
-  se := db.UpdateVisit(id, func(se *structs.Visit) {
+  db.UpdateVisit(id, func(se *structs.Visit) {
     if se == nil {
       log.Println(id)
       return
     }
-    oldLocationIDUint = se.Location
-    oldUserIDUint = se.User
-    if e.Location != nil {
+    if e.Location != nil && se.Location != *e.Location {
+      db.AddLocationVisit(db.IDToStr(*e.Location), id, db.IDToStr(se.Location))
       se.Location = *e.Location
     }
-    if e.User != nil {
+    if e.User != nil && se.User != *e.User {
+      db.AddUserVisit(db.IDToStr(*e.User), id, db.IDToStr(se.User))
       se.User = *e.User
     }
     if e.VisitedAt != nil {
@@ -180,12 +176,4 @@ func UpdateVisitProcess(bid []byte, e *structs.VisitUp) {
       se.Mark = *e.Mark
     }
   })
-
-  if se.Location != oldLocationIDUint {
-    db.AddLocationVisit(db.IDToStr(se.Location), id, db.IDToStr(oldLocationIDUint))
-  }
-
-  if se.User != oldUserIDUint {
-    db.AddUserVisit(db.IDToStr(se.User), id, db.IDToStr(oldUserIDUint))
-  }
 }
