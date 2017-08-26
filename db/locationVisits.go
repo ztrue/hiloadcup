@@ -12,14 +12,12 @@ type LocationVisitsCollection struct {
   m *sync.RWMutex
   // location ID => visit ID => true
   i map[string]map[string]bool
-  e map[string][]*structs.LocationVisit
 }
 
 func NewLocationVisitsCollection() *LocationVisitsCollection {
   return &LocationVisitsCollection{
     m: &sync.RWMutex{},
     i: map[string]map[string]bool{},
-    e: map[string][]*structs.LocationVisit{},
   }
 }
 
@@ -37,15 +35,8 @@ func (cLocationVisits *LocationVisitsCollection) addIndex(locationID, visitID, o
   cLocationVisits.m.Unlock()
 }
 
-func (cLocationVisits *LocationVisitsCollection) Add(locationID, visitID, oldLocationID string, cache bool) {
+func (cLocationVisits *LocationVisitsCollection) Add(locationID, visitID, oldLocationID string) {
   cLocationVisits.addIndex(locationID, visitID, oldLocationID)
-
-  // if cache {
-  //   cLocationVisits.Calculate(locationID)
-  //   if oldLocationID != "" {
-  //     cLocationVisits.Calculate(oldLocationID)
-  //   }
-  // }
 }
 
 func (cLocationVisits *LocationVisitsCollection) CalculateResult(locationID string) []*structs.LocationVisit {
@@ -80,19 +71,8 @@ func (cLocationVisits *LocationVisitsCollection) CalculateResult(locationID stri
   return locationVisits
 }
 
-// func (cLocationVisits *LocationVisitsCollection) Calculate(locationID string) {
-//   locationVisits := cLocationVisits.CalculateResult(locationID)
-//   cLocationVisits.m.Lock()
-//   cLocationVisits.e[locationID] = locationVisits
-//   cLocationVisits.m.Unlock()
-// }
-
 func (cLocationVisits *LocationVisitsCollection) Get(id string) []*structs.LocationVisit {
   return cLocationVisits.CalculateResult(id)
-  // cLocationVisits.m.RLock()
-  // e := cLocationVisits.e[id]
-  // cLocationVisits.m.RUnlock()
-  // return e
 }
 
 func (cLocationVisits *LocationVisitsCollection) GetIDs(id string) []string {
@@ -129,39 +109,16 @@ func (cLocationVisits *LocationVisitsCollection) GetFiltered(
 
 func (cLocationVisits *LocationVisitsCollection) Exists(id string) bool {
   cLocationVisits.m.RLock()
-  e := cLocationVisits.e[id] != nil
-  cLocationVisits.m.RUnlock()
-  return e
-}
-
-func (cLocationVisits *LocationVisitsCollection) Iterate(iter func(string, []*structs.LocationVisit)) {
-  cLocationVisits.m.RLock()
-  for id, e := range cLocationVisits.e {
-    iter(id, e)
-  }
-  cLocationVisits.m.RUnlock()
-}
-
-func (cLocationVisits *LocationVisitsCollection) IterateIndex(iter func(locationID, visitID string) bool) {
-  cLocationVisits.m.RLock()
-  for locationID, m := range cLocationVisits.i {
-    for visitID, ok := range m {
-      if ok {
-        if !iter(locationID, visitID) {
-          break
-        }
-      }
-    }
-  }
-  cLocationVisits.m.RUnlock()
+  defer cLocationVisits.m.RUnlock()
+  return cLocationVisits.i[id] != nil
 }
 
 func PrepareLocationVisits() {
   cLocationVisits = NewLocationVisitsCollection()
 }
 
-func AddLocationVisit(locationID, visitID, oldLocationID string, cache bool) {
-  cLocationVisits.Add(locationID, visitID, oldLocationID, cache)
+func AddLocationVisit(locationID, visitID, oldLocationID string) {
+  cLocationVisits.Add(locationID, visitID, oldLocationID)
 }
 
 // func CalculateLocationVisit(id string) {
@@ -204,14 +161,6 @@ func GetLocationAvg(
 
 func LocationVisitExists(id string) bool {
   return cLocationVisits.Exists(id)
-}
-
-func IterateLocationVisits(iter func(string, []*structs.LocationVisit)) {
-  cLocationVisits.Iterate(iter)
-}
-
-func IterateLocationVisitsIndex(iter func(locationID, visitID string) bool) {
-  cLocationVisits.IterateIndex(iter)
 }
 
 type LocationVisitsByDate []*structs.LocationVisit

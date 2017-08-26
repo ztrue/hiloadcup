@@ -11,14 +11,12 @@ type UserVisitsCollection struct {
   m *sync.RWMutex
   // user ID => visit ID => true
   i map[string]map[string]bool
-  e map[string][]*structs.UserVisit
 }
 
 func NewUserVisitsCollection() *UserVisitsCollection {
   return &UserVisitsCollection{
     m: &sync.RWMutex{},
     i: map[string]map[string]bool{},
-    e: map[string][]*structs.UserVisit{},
   }
 }
 
@@ -36,15 +34,8 @@ func (cUserVisits *UserVisitsCollection) addIndex(userID, visitID, oldUserID str
   cUserVisits.m.Unlock()
 }
 
-func (cUserVisits *UserVisitsCollection) Add(userID, visitID, oldUserID string, cache bool) {
+func (cUserVisits *UserVisitsCollection) Add(userID, visitID, oldUserID string) {
   cUserVisits.addIndex(userID, visitID, oldUserID)
-
-  // if cache {
-  //   cUserVisits.Calculate(userID)
-  //   if oldUserID != "" {
-  //     cUserVisits.Calculate(oldUserID)
-  //   }
-  // }
 }
 
 func (cUserVisits *UserVisitsCollection) CalculateResult(userID string) []*structs.UserVisit {
@@ -80,19 +71,8 @@ func (cUserVisits *UserVisitsCollection) CalculateResult(userID string) []*struc
   return userVisits
 }
 
-// func (cUserVisits *UserVisitsCollection) Calculate(userID string) {
-//   userVisits := cUserVisits.CalculateResult(userID)
-//   cUserVisits.m.Lock()
-//   cUserVisits.e[userID] = userVisits
-//   cUserVisits.m.Unlock()
-// }
-
 func (cUserVisits *UserVisitsCollection) Get(id string) []*structs.UserVisit {
   return cUserVisits.CalculateResult(id)
-  // cUserVisits.m.RLock()
-  // e := cUserVisits.e[id]
-  // cUserVisits.m.RUnlock()
-  // return e
 }
 
 func (cUserVisits *UserVisitsCollection) GetIDs(id string) []string {
@@ -112,31 +92,8 @@ func (cUserVisits *UserVisitsCollection) GetIDs(id string) []string {
 
 func (cUserVisits *UserVisitsCollection) Exists(id string) bool {
   cUserVisits.m.RLock()
-  e := cUserVisits.e[id] != nil
-  cUserVisits.m.RUnlock()
-  return e
-}
-
-func (cUserVisits *UserVisitsCollection) Iterate(iter func(string, []*structs.UserVisit)) {
-  cUserVisits.m.RLock()
-  for id, e := range cUserVisits.e {
-    iter(id, e)
-  }
-  cUserVisits.m.RUnlock()
-}
-
-func (cUserVisits *UserVisitsCollection) IterateIndex(iter func(userID, visitID string) bool) {
-  cUserVisits.m.RLock()
-  for userID, m := range cUserVisits.i {
-    for visitID, ok := range m {
-      if ok {
-        if !iter(userID, visitID) {
-          break
-        }
-      }
-    }
-  }
-  cUserVisits.m.RUnlock()
+  defer cUserVisits.m.RUnlock()
+  return cUserVisits.i[id] != nil
 }
 
 func (cUserVisits *UserVisitsCollection) GetFiltered(
@@ -160,8 +117,8 @@ func PrepareUserVisits() {
   cUserVisits = NewUserVisitsCollection()
 }
 
-func AddUserVisit(userID, visitID, oldUserID string, cache bool) {
-  cUserVisits.Add(userID, visitID, oldUserID, cache)
+func AddUserVisit(userID, visitID, oldUserID string) {
+  cUserVisits.Add(userID, visitID, oldUserID)
 }
 
 // func CalculateUserVisit(id string) {
@@ -194,14 +151,6 @@ func GetUserVisitsList(
 
 func UserVisitExists(id string) bool {
   return cUserVisits.Exists(id)
-}
-
-func IterateUserVisits(iter func(string, []*structs.UserVisit)) {
-  cUserVisits.Iterate(iter)
-}
-
-func IterateUserVisitsIndex(iter func(userID, visitID string) bool) {
-  cUserVisits.IterateIndex(iter)
 }
 
 type UserVisitsByDate []*structs.UserVisit

@@ -46,12 +46,7 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
     }
     toDistance = uint32(toDistance64)
   }
-  // var visits []*structs.Visit
-  // if hasCountry {
-  //   visits = GetCachedUserVisitsByCountry(id, country)
-  // } else {
-  //  visits = GetCachedUserVisits(id)
-  // }
+
   return db.GetUserVisitsList(id, func(e *structs.UserVisit) bool {
     if hasFromDate && e.VisitedAt <= fromDate {
       return false
