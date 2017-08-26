@@ -3,6 +3,7 @@ package main
 import (
   "io/ioutil"
   "log"
+  "strings"
   "github.com/pquerna/ffjson/ffjson"
   "app/structs"
 )
@@ -13,6 +14,9 @@ func Import(path string) error {
     return err
   }
   for _, f := range files {
+    if !strings.HasSuffix(f.Name(), ".json") {
+      continue
+    }
     if err := Parse(path + "/" + f.Name()); err != nil {
       return err
     }
