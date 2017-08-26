@@ -43,11 +43,11 @@ func PrepareCache() {
     }
     log.Println("CacheUserVisits END")
 
-    log.Println("CacheUserVisitsResponse BEGIN")
-    for id := range UserCache {
-      CacheUserVisitsResponse(id)
-    }
-    log.Println("CacheUserVisitsResponse END")
+    // log.Println("CacheUserVisitsResponse BEGIN")
+    // for id := range UserCache {
+    //   CacheUserVisitsResponse(id)
+    // }
+    // log.Println("CacheUserVisitsResponse END")
   }()
 
   // go func() {
@@ -75,11 +75,11 @@ func PrepareCache() {
     }
     log.Println("CacheLocationAvg END")
 
-    log.Println("CacheLocationAvgResponse BEGIN")
-    for id := range LocationCache {
-      CacheLocationAvgResponse(id)
-    }
-    log.Println("CacheLocationAvgResponse END")
+    // log.Println("CacheLocationAvgResponse BEGIN")
+    // for id := range LocationCache {
+    //   CacheLocationAvgResponse(id)
+    // }
+    // log.Println("CacheLocationAvgResponse END")
   }()
 }
 

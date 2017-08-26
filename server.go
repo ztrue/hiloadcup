@@ -27,7 +27,7 @@ var lastPost = time.Time{}
 func Serve(addr string) error {
   go func() {
     for {
-      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > .1 {
+      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > .5 {
         log.Println("CACHE UPDATE BEGIN")
         PrepareCache()
         break
@@ -50,52 +50,48 @@ func route(ctx *fasthttp.RequestCtx) {
     }
 
     if bytes.HasSuffix(path, routeVisitsSuffix) {
-      if !PathParamExists(path) {
-        ResponseStatus(ctx, 404)
-        return
-      }
+      // if !PathParamExists(path) {
+      //   ResponseStatus(ctx, 404)
+      //   return
+      // }
 
       v := ctx.URI().QueryArgs()
-      if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
-      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
-      //   if !v.Has("country") {
-          cached := GetCachedPathParam(path)
-          if cached == nil {
-            log.Println(string(path))
-          } else {
-            ResponseBytes(ctx, cached)
-            return
-          }
-        // } else {
-        //   cached := GetCachedPathParamCountry(path, v.Peek("country"))
-        //   if cached == nil {
-        //     log.Println(string(path))
-        //   } else {
-        //     ResponseBytes(ctx, cached)
-        //     return
-        //   }
-        // }
-      }
+      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
+      // // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
+      // //   if !v.Has("country") {
+      //     cached := GetCachedPathParam(path)
+      //     if cached != nil {
+      //       ResponseBytes(ctx, cached)
+      //       return
+      //     }
+      //   // } else {
+      //   //   cached := GetCachedPathParamCountry(path, v.Peek("country"))
+      //   //   if cached == nil {
+      //   //     log.Println(string(path))
+      //   //   } else {
+      //   //     ResponseBytes(ctx, cached)
+      //   //     return
+      //   //   }
+      //   // }
+      // }
       ActionGetUserVisits(ctx, path[7:len(path) - 7], v)
       return
     }
 
     if bytes.HasSuffix(path, routeAvgSuffix) {
-      if !PathParamExists(path) {
-        ResponseStatus(ctx, 404)
-        return
-      }
+      // if !PathParamExists(path) {
+      //   ResponseStatus(ctx, 404)
+      //   return
+      // }
 
       v := ctx.URI().QueryArgs()
-      if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
-        cached := GetCachedPathParam(path)
-        if cached == nil {
-          log.Println(string(path))
-        } else {
-          ResponseBytes(ctx, cached)
-          return
-        }
-      }
+      // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
+      //   cached := GetCachedPathParam(path)
+      //   if cached != nil {
+      //     ResponseBytes(ctx, cached)
+      //     return
+      //   }
+      // }
       ActionGetLocationAvg(ctx, path[11:len(path) - 4], v)
       return
     }
