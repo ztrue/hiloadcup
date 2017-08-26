@@ -51,7 +51,7 @@ func GetUserVisits(bid []byte, v *fasthttp.Args) (*structs.UserVisitsList, int) 
   // } else {
   //  visits = GetCachedUserVisits(id)
   // }
-  return ConvertUserVisits(GetCachedUserVisits(id), func(uv *structs.UserVisit) bool {
+  return ConvertUserVisits(GetUserVisitsEntities(id), func(uv *structs.UserVisit) bool {
     if hasFromDate && uv.VisitedAt <= fromDate {
       return false
     }
@@ -115,7 +115,7 @@ func GetLocationAvg(bid []byte, v *fasthttp.Args) (*structs.LocationAvg, int) {
     }
   }
 
-  return ConvertLocationAvg(GetCachedLocationAvg(id), func(lv *structs.LocationVisit) bool {
+  return ConvertLocationAvg(GetLocationVisitsEntities(id), func(lv *structs.LocationVisit) bool {
     if hasFromDate && lv.VisitedAt <= fromDate {
       return false
     }

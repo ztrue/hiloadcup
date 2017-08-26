@@ -1,13 +1,11 @@
 package main
 
-import (
-  "bytes"
-  "log"
-  "time"
-  "github.com/valyala/fasthttp"
-  "github.com/pquerna/ffjson/ffjson"
-  "app/structs"
-)
+import "bytes"
+import "log"
+// import "time"
+import "github.com/valyala/fasthttp"
+import "github.com/pquerna/ffjson/ffjson"
+import "app/structs"
 
 var methodGet = []byte("GET")
 var methodPost = []byte("POST")
@@ -22,19 +20,19 @@ var routeVisitPrefix = []byte("/visits/")
 var routeVisitsSuffix = []byte("/visits")
 var routeAvgSuffix = []byte("/avg")
 
-var lastPost = time.Time{}
+// var lastPost = time.Time{}
 
 func Serve(addr string) error {
-  go func() {
-    for {
-      if !lastPost.IsZero() && time.Since(lastPost).Seconds() > .5 {
-        log.Println("CACHE UPDATE BEGIN")
-        PrepareCache()
-        break
-      }
-      time.Sleep(100 * time.Millisecond)
-    }
-  }()
+  // go func() {
+  //   for {
+  //     if !lastPost.IsZero() && time.Since(lastPost).Seconds() > .5 {
+  //       log.Println("CACHE UPDATE BEGIN")
+  //       PrepareCache()
+  //       break
+  //     }
+  //     time.Sleep(100 * time.Millisecond)
+  //   }
+  // }()
   log.Println("Server started at " + addr)
   return fasthttp.ListenAndServe(addr, route)
 }
@@ -55,7 +53,7 @@ func route(ctx *fasthttp.RequestCtx) {
       //   return
       // }
 
-      v := ctx.URI().QueryArgs()
+      // v := ctx.URI().QueryArgs()
       // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") && !v.Has("country") {
       // // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("toDistance") {
       // //   if !v.Has("country") {
@@ -74,7 +72,7 @@ func route(ctx *fasthttp.RequestCtx) {
       //   //   }
       //   // }
       // }
-      ActionGetUserVisits(ctx, path[7:len(path) - 7], v)
+      ActionGetUserVisits(ctx, path[7:len(path) - 7], ctx.URI().QueryArgs())
       return
     }
 
@@ -84,7 +82,7 @@ func route(ctx *fasthttp.RequestCtx) {
       //   return
       // }
 
-      v := ctx.URI().QueryArgs()
+      // v := ctx.URI().QueryArgs()
       // if !v.Has("fromDate") && !v.Has("toDate") && !v.Has("fromAge") && !v.Has("toAge") && !v.Has("gender") {
       //   cached := GetCachedPathParam(path)
       //   if cached != nil {
@@ -92,7 +90,7 @@ func route(ctx *fasthttp.RequestCtx) {
       //     return
       //   }
       // }
-      ActionGetLocationAvg(ctx, path[11:len(path) - 4], v)
+      ActionGetLocationAvg(ctx, path[11:len(path) - 4], ctx.URI().QueryArgs())
       return
     }
 
@@ -109,7 +107,7 @@ func route(ctx *fasthttp.RequestCtx) {
       return
     }
   } else {
-    lastPost = time.Now()
+    // lastPost = time.Now()
 
     if bytes.Equal(path, routeNewLocation) {
       ActionNewLocation(ctx)

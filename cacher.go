@@ -1,12 +1,10 @@
 package main
 
-import (
-  "log"
-  "sync"
-  "sort"
-  "github.com/pquerna/ffjson/ffjson"
-  "app/structs"
-)
+import "log"
+import "sync"
+import "sort"
+// import "github.com/pquerna/ffjson/ffjson"
+import "app/structs"
 
 // user ID => visit ID => true
 var UserVisitsMap = map[string]map[string]bool{}
@@ -18,12 +16,12 @@ var LocationVisitsMap = map[string]map[string]bool{}
 var LocationCache = map[string]*structs.Location{}
 var UserCache = map[string]*structs.User{}
 var VisitCache = map[string]*structs.Visit{}
-var UserVisitsCache = map[string][]*structs.UserVisit{}
-// var UserVisitsByCountryCache = map[string]map[string][]*structs.Visit{}
-var LocationAvgCache = map[string][]*structs.LocationVisit{}
-var PathCache = map[string][]byte{}
-var PathParamCache = map[string][]byte{}
-// var PathParamCountryCache = map[string]map[string][]byte{}
+// var UserVisitsCache = map[string][]*structs.UserVisit{}
+// // var UserVisitsByCountryCache = map[string]map[string][]*structs.Visit{}
+// var LocationAvgCache = map[string][]*structs.LocationVisit{}
+// var PathCache = map[string][]byte{}
+// var PathParamCache = map[string][]byte{}
+// // var PathParamCountryCache = map[string]map[string][]byte{}
 
 var mUVMap = &sync.RWMutex{}
 var mLVMap = &sync.RWMutex{}
@@ -31,63 +29,63 @@ var mLVMap = &sync.RWMutex{}
 var mLocation = &sync.RWMutex{}
 var mUser = &sync.RWMutex{}
 var mVisit = &sync.RWMutex{}
-var mPath = &sync.RWMutex{}
-var mPathParam = &sync.RWMutex{}
+// var mPath = &sync.RWMutex{}
+// var mPathParam = &sync.RWMutex{}
 // var mPathParamCountry = &sync.RWMutex{}
 
-func PrepareCache() {
-  go func() {
-    LogMemory("CacheUserVisits BEGIN")
-    // log.Println("CacheUserVisits BEGIN")
-    for id := range UserCache {
-      CacheUserVisits(id)
-    }
-    LogMemory("CacheUserVisits END")
-    // log.Println("CacheUserVisits END")
-
-    // LogMemory("CacheUserVisitsResponse BEGIN")
-    // // log.Println("CacheUserVisitsResponse BEGIN")
-    // for id := range UserCache {
-    //   CacheUserVisitsResponse(id)
-    // }
-    // LogMemory("CacheUserVisitsResponse END")
-    // // log.Println("CacheUserVisitsResponse END")
-  }()
-
-  // go func() {
-  //   log.Println("CacheUserVisitsByCountry BEGIN")
-  //   for id := range UserCache {
-  //     for country := range Countries {
-  //       CacheUserVisitsByCountry(id, country)
-  //     }
-  //   }
-  //   log.Println("CacheUserVisitsByCountry END")
-  //
-  //   log.Println("CacheUserVisitsByCountryResponse BEGIN")
-  //   for id := range UserCache {
-  //     for country := range Countries {
-  //       CacheUserVisitsByCountryResponse(id, country)
-  //     }
-  //   }
-  //   log.Println("CacheUserVisitsByCountryResponse END")
-  // }()
-
-  go func() {
-    LogMemory("CacheLocationAvg BEGIN")
-    // log.Println("CacheLocationAvg BEGIN")
-    for id := range LocationCache {
-      CacheLocationAvg(id)
-    }
-    LogMemory("CacheLocationAvg END")
-    // log.Println("CacheLocationAvg END")
-
-    // log.Println("CacheLocationAvgResponse BEGIN")
-    // for id := range LocationCache {
-    //   CacheLocationAvgResponse(id)
-    // }
-    // log.Println("CacheLocationAvgResponse END")
-  }()
-}
+// func PrepareCache() {
+//   go func() {
+//     LogMemory("CacheUserVisits BEGIN")
+//     // log.Println("CacheUserVisits BEGIN")
+//     for id := range UserCache {
+//       CacheUserVisits(id)
+//     }
+//     LogMemory("CacheUserVisits END")
+//     // log.Println("CacheUserVisits END")
+//
+//     // LogMemory("CacheUserVisitsResponse BEGIN")
+//     // // log.Println("CacheUserVisitsResponse BEGIN")
+//     // for id := range UserCache {
+//     //   CacheUserVisitsResponse(id)
+//     // }
+//     // LogMemory("CacheUserVisitsResponse END")
+//     // // log.Println("CacheUserVisitsResponse END")
+//   }()
+//
+//   // go func() {
+//   //   log.Println("CacheUserVisitsByCountry BEGIN")
+//   //   for id := range UserCache {
+//   //     for country := range Countries {
+//   //       CacheUserVisitsByCountry(id, country)
+//   //     }
+//   //   }
+//   //   log.Println("CacheUserVisitsByCountry END")
+//   //
+//   //   log.Println("CacheUserVisitsByCountryResponse BEGIN")
+//   //   for id := range UserCache {
+//   //     for country := range Countries {
+//   //       CacheUserVisitsByCountryResponse(id, country)
+//   //     }
+//   //   }
+//   //   log.Println("CacheUserVisitsByCountryResponse END")
+//   // }()
+//
+//   go func() {
+//     LogMemory("CacheLocationAvg BEGIN")
+//     // log.Println("CacheLocationAvg BEGIN")
+//     for id := range LocationCache {
+//       CacheLocationAvg(id)
+//     }
+//     LogMemory("CacheLocationAvg END")
+//     // log.Println("CacheLocationAvg END")
+//
+//     // log.Println("CacheLocationAvgResponse BEGIN")
+//     // for id := range LocationCache {
+//     //   CacheLocationAvgResponse(id)
+//     // }
+//     // log.Println("CacheLocationAvgResponse END")
+//   }()
+// }
 
 // func AddCountry(country string) {
 //   mCountries.Lock()
@@ -274,17 +272,17 @@ func VisitExists(id string) bool {
   return VisitCache[id] != nil
 }
 
-func PathExists(path []byte) bool {
-  return PathCache[string(path)] != nil
-}
+// func PathExists(path []byte) bool {
+//   return PathCache[string(path)] != nil
+// }
 
-func PathParamExists(path []byte) bool {
-  return PathParamCache[string(path)] != nil
-}
+// func PathParamExists(path []byte) bool {
+//   return PathParamCache[string(path)] != nil
+// }
 
-func GetCachedUserVisits(id string) []*structs.UserVisit {
-  return UserVisitsCache[id]
-}
+// func GetCachedUserVisits(id string) []*structs.UserVisit {
+//   return UserVisitsCache[id]
+// }
 
 // func GetCachedUserVisitsByCountry(id string, country string) []*structs.Visit {
 //   m := UserVisitsByCountryCache[id]
@@ -294,17 +292,17 @@ func GetCachedUserVisits(id string) []*structs.UserVisit {
 //   return m[country]
 // }
 
-func GetCachedLocationAvg(id string) []*structs.LocationVisit {
-  return LocationAvgCache[id]
-}
+// func GetCachedLocationAvg(id string) []*structs.LocationVisit {
+//   return LocationAvgCache[id]
+// }
 
-func GetCachedPath(path []byte) []byte {
-  return PathCache[string(path)]
-}
-
-func GetCachedPathParam(path []byte) []byte {
-  return PathParamCache[string(path)]
-}
+// func GetCachedPath(path []byte) []byte {
+//   return PathCache[string(path)]
+// }
+//
+// func GetCachedPathParam(path []byte) []byte {
+//   return PathParamCache[string(path)]
+// }
 
 // func GetCachedPathParamCountry(path, country []byte) []byte {
 //   m, ok := PathParamCountryCache[string(path)]
@@ -325,38 +323,38 @@ func GetCachedPathParam(path []byte) []byte {
 //   mPath.Unlock()
 // }
 
-func CachePathLocation(path string, data *structs.Location) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println(path)
-    return
-  }
-  mPath.Lock()
-  PathCache[path] = body
-  mPath.Unlock()
-}
-
-func CachePathUser(path string, data *structs.User) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println(path)
-    return
-  }
-  mPath.Lock()
-  PathCache[path] = body
-  mPath.Unlock()
-}
-
-func CachePathVisit(path string, data *structs.Visit) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println(path)
-    return
-  }
-  mPath.Lock()
-  PathCache[path] = body
-  mPath.Unlock()
-}
+// func CachePathLocation(path string, data *structs.Location) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPath.Lock()
+//   PathCache[path] = body
+//   mPath.Unlock()
+// }
+//
+// func CachePathUser(path string, data *structs.User) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPath.Lock()
+//   PathCache[path] = body
+//   mPath.Unlock()
+// }
+//
+// func CachePathVisit(path string, data *structs.Visit) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPath.Lock()
+//   PathCache[path] = body
+//   mPath.Unlock()
+// }
 
 // func CachePathParam(path string, data interface{}) {
 //   body, err := ffjson.Marshal(data)
@@ -369,27 +367,27 @@ func CachePathVisit(path string, data *structs.Visit) {
 //   mPathParam.Unlock()
 // }
 
-func CachePathParamUserVisits(path string, data *structs.UserVisitsList) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println(path)
-    return
-  }
-  mPathParam.Lock()
-  PathParamCache[path] = body
-  mPathParam.Unlock()
-}
-
-func CachePathParamLocationAvg(path string, data *structs.LocationAvg) {
-  body, err := ffjson.Marshal(data)
-  if err != nil {
-    log.Println(path)
-    return
-  }
-  mPathParam.Lock()
-  PathParamCache[path] = body
-  mPathParam.Unlock()
-}
+// func CachePathParamUserVisits(path string, data *structs.UserVisitsList) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPathParam.Lock()
+//   PathParamCache[path] = body
+//   mPathParam.Unlock()
+// }
+//
+// func CachePathParamLocationAvg(path string, data *structs.LocationAvg) {
+//   body, err := ffjson.Marshal(data)
+//   if err != nil {
+//     log.Println(path)
+//     return
+//   }
+//   mPathParam.Lock()
+//   PathParamCache[path] = body
+//   mPathParam.Unlock()
+// }
 
 // func CachePathParamCountry(path, country string, data interface{}) {
 //   body, err := ffjson.Marshal(data)
@@ -423,34 +421,6 @@ func CachePathParamLocationAvg(path string, data *structs.LocationAvg) {
 //   mPathParamCountry.Unlock()
 // }
 
-
-func CacheLocation(id string) {
-  e := GetLocationSafe(id)
-  if e == nil {
-    log.Println(id)
-    return
-  }
-  CacheLocationResponse(id, e)
-}
-
-func CacheUser(id string) {
-  e := GetUserSafe(id)
-  if e == nil {
-    log.Println(id)
-    return
-  }
-  CacheUserResponse(id, e)
-}
-
-func CacheVisit(id string) {
-  e := GetVisitSafe(id)
-  if e == nil {
-    log.Println(id)
-    return
-  }
-  CacheVisitResponse(id, e)
-}
-
 func CacheLocationResponse(id string, e *structs.Location) {
   mLocation.Lock()
   LocationCache[id] = e
@@ -472,10 +442,10 @@ func CacheVisitResponse(id string, e *structs.Visit) {
   // CachePathVisit("/visits/" + id, e)
 }
 
-func CacheUserVisits(id string) {
-  // No block because it must be prepared in PrepareCache() only
-  UserVisitsCache[id] = GetUserVisitsEntities(id)
-}
+// func CacheUserVisits(id string) {
+//   // No block because it must be prepared in PrepareCache() only
+//   UserVisitsCache[id] = GetUserVisitsEntities(id)
+// }
 
 // func CacheUserVisitsByCountry(id string, country string) {
 //   m, ok := UserVisitsByCountryCache[id]
@@ -487,19 +457,19 @@ func CacheUserVisits(id string) {
 //   m[country] = GetUserVisitsEntitiesByCountry(id, country)
 // }
 
-func CacheLocationAvg(id string) {
-  // No block because it must be prepared in PrepareCache() only
-  LocationAvgCache[id] = GetLocationVisitsEntities(id)
-}
+// func CacheLocationAvg(id string) {
+//   // No block because it must be prepared in PrepareCache() only
+//   LocationAvgCache[id] = GetLocationVisitsEntities(id)
+// }
 
-func CacheUserVisitsResponse(id string) {
-  CachePathParamUserVisits(
-    "/users/" + id + "/visits",
-    ConvertUserVisits(GetCachedUserVisits(id), func(*structs.UserVisit) bool {
-      return true
-    }),
-  )
-}
+// func CacheUserVisitsResponse(id string) {
+//   CachePathParamUserVisits(
+//     "/users/" + id + "/visits",
+//     ConvertUserVisits(GetCachedUserVisits(id), func(*structs.UserVisit) bool {
+//       return true
+//     }),
+//   )
+// }
 
 // func CacheUserVisitsByCountryResponse(id string, country string) {
 //   CachePathParamCountryUserVisits(
@@ -511,14 +481,14 @@ func CacheUserVisitsResponse(id string) {
 //   )
 // }
 
-func CacheLocationAvgResponse(id string) {
-  CachePathParamLocationAvg(
-    "/locations/" + id + "/avg",
-    ConvertLocationAvg(GetCachedLocationAvg(id), func(*structs.LocationVisit) bool {
-      return true
-    }),
-  )
-}
+// func CacheLocationAvgResponse(id string) {
+//   CachePathParamLocationAvg(
+//     "/locations/" + id + "/avg",
+//     ConvertLocationAvg(GetCachedLocationAvg(id), func(*structs.LocationVisit) bool {
+//       return true
+//     }),
+//   )
+// }
 
 type UserVisitsByDate []*structs.UserVisit
 func (v UserVisitsByDate) Len() int {
