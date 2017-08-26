@@ -25,29 +25,33 @@ var PathCache = map[string][]byte{}
 var PathParamCache = map[string][]byte{}
 // var PathParamCountryCache = map[string]map[string][]byte{}
 
-var mUVMap = &sync.Mutex{}
-var mLVMap = &sync.Mutex{}
-// var mCountries = &sync.Mutex{}
-var mLocation = &sync.Mutex{}
-var mUser = &sync.Mutex{}
-var mVisit = &sync.Mutex{}
-var mPath = &sync.Mutex{}
-var mPathParam = &sync.Mutex{}
-// var mPathParamCountry = &sync.Mutex{}
+var mUVMap = &sync.RWMutex{}
+var mLVMap = &sync.RWMutex{}
+// var mCountries = &sync.RWMutex{}
+var mLocation = &sync.RWMutex{}
+var mUser = &sync.RWMutex{}
+var mVisit = &sync.RWMutex{}
+var mPath = &sync.RWMutex{}
+var mPathParam = &sync.RWMutex{}
+// var mPathParamCountry = &sync.RWMutex{}
 
 func PrepareCache() {
   go func() {
-    log.Println("CacheUserVisits BEGIN")
+    LogMemory("CacheUserVisits BEGIN")
+    // log.Println("CacheUserVisits BEGIN")
     for id := range UserCache {
       CacheUserVisits(id)
     }
-    log.Println("CacheUserVisits END")
+    LogMemory("CacheUserVisits END")
+    // log.Println("CacheUserVisits END")
 
-    // log.Println("CacheUserVisitsResponse BEGIN")
+    // LogMemory("CacheUserVisitsResponse BEGIN")
+    // // log.Println("CacheUserVisitsResponse BEGIN")
     // for id := range UserCache {
     //   CacheUserVisitsResponse(id)
     // }
-    // log.Println("CacheUserVisitsResponse END")
+    // LogMemory("CacheUserVisitsResponse END")
+    // // log.Println("CacheUserVisitsResponse END")
   }()
 
   // go func() {
@@ -69,11 +73,13 @@ func PrepareCache() {
   // }()
 
   go func() {
-    log.Println("CacheLocationAvg BEGIN")
+    LogMemory("CacheLocationAvg BEGIN")
+    // log.Println("CacheLocationAvg BEGIN")
     for id := range LocationCache {
       CacheLocationAvg(id)
     }
-    log.Println("CacheLocationAvg END")
+    LogMemory("CacheLocationAvg END")
+    // log.Println("CacheLocationAvg END")
 
     // log.Println("CacheLocationAvgResponse BEGIN")
     // for id := range LocationCache {
@@ -134,23 +140,23 @@ func GetVisit(id string) *structs.Visit {
 }
 
 func GetLocationSafe(id string) *structs.Location {
-  mLocation.Lock()
+  mLocation.RLock()
   e := LocationCache[id]
-  mLocation.Unlock()
+  mLocation.RUnlock()
   return e
 }
 
 func GetUserSafe(id string) *structs.User {
-  mUser.Lock()
+  mUser.RLock()
   e := UserCache[id]
-  mUser.Unlock()
+  mUser.RUnlock()
   return e
 }
 
 func GetVisitSafe(id string) *structs.Visit {
-  mVisit.Lock()
+  mVisit.RLock()
   e := VisitCache[id]
-  mVisit.Unlock()
+  mVisit.RUnlock()
   return e
 }
 
@@ -248,6 +254,24 @@ func GetLocationVisitsEntities(id string) []*structs.LocationVisit {
     )
   }
   return locationVisits
+}
+
+func LocationExists(id string) bool {
+  mLocation.RLock()
+  defer mLocation.RUnlock()
+  return LocationCache[id] != nil
+}
+
+func UserExists(id string) bool {
+  mUser.RLock()
+  defer mUser.RUnlock()
+  return UserCache[id] != nil
+}
+
+func VisitExists(id string) bool {
+  mVisit.RLock()
+  defer mVisit.RUnlock()
+  return VisitCache[id] != nil
 }
 
 func PathExists(path []byte) bool {
@@ -431,21 +455,21 @@ func CacheLocationResponse(id string, e *structs.Location) {
   mLocation.Lock()
   LocationCache[id] = e
   mLocation.Unlock()
-  CachePathLocation("/locations/" + id, e)
+  // CachePathLocation("/locations/" + id, e)
 }
 
 func CacheUserResponse(id string, e *structs.User) {
   mUser.Lock()
   UserCache[id] = e
   mUser.Unlock()
-  CachePathUser("/users/" + id, e)
+  // CachePathUser("/users/" + id, e)
 }
 
 func CacheVisitResponse(id string, e *structs.Visit) {
   mVisit.Lock()
   VisitCache[id] = e
   mVisit.Unlock()
-  CachePathVisit("/visits/" + id, e)
+  // CachePathVisit("/visits/" + id, e)
 }
 
 func CacheUserVisits(id string) {

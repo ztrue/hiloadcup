@@ -43,11 +43,11 @@ func route(ctx *fasthttp.RequestCtx) {
   path := ctx.Path()
 
   if bytes.Equal(ctx.Method(), methodGet) {
-    cached := GetCachedPath(path)
-    if cached != nil {
-      ResponseBytes(ctx, cached)
-      return
-    }
+    // cached := GetCachedPath(path)
+    // if cached != nil {
+    //   ResponseBytes(ctx, cached)
+    //   return
+    // }
 
     if bytes.HasSuffix(path, routeVisitsSuffix) {
       // if !PathParamExists(path) {
@@ -95,6 +95,19 @@ func route(ctx *fasthttp.RequestCtx) {
       ActionGetLocationAvg(ctx, path[11:len(path) - 4], v)
       return
     }
+
+    if bytes.HasPrefix(path, routeLocationPrefix) {
+      ActionGetLocation(ctx, path[11:])
+      return
+    }
+    if bytes.HasPrefix(path, routeUserPrefix) {
+      ActionGetUser(ctx, path[7:])
+      return
+    }
+    if bytes.HasPrefix(path, routeVisitPrefix) {
+      ActionGetVisit(ctx, path[8:])
+      return
+    }
   } else {
     lastPost = time.Now()
 
@@ -111,7 +124,7 @@ func route(ctx *fasthttp.RequestCtx) {
       return
     }
 
-    if PathExists(path) {
+    // if PathExists(path) {
       if bytes.HasPrefix(path, routeLocationPrefix) {
         ActionUpdateLocation(ctx, path[11:])
         return
@@ -124,7 +137,7 @@ func route(ctx *fasthttp.RequestCtx) {
         ActionUpdateVisit(ctx, path[8:])
         return
       }
-    }
+    // }
   }
 
   ResponseStatus(ctx, 404)
@@ -132,13 +145,11 @@ func route(ctx *fasthttp.RequestCtx) {
 
 func ResponseStatus(ctx *fasthttp.RequestCtx, status int) {
   ctx.SetStatusCode(status)
-  // ctx.SetConnectionClose()
 }
 
 func ResponseBytes(ctx *fasthttp.RequestCtx, body []byte) {
   ctx.SetStatusCode(200)
   ctx.SetBody(body)
-  // ctx.SetConnectionClose()
 }
 
 func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsList) {
@@ -147,7 +158,6 @@ func ResponseJSONUserVisits(ctx *fasthttp.RequestCtx, data *structs.UserVisitsLi
     ResponseStatus(ctx, 400)
     return
   }
-  // ctx.SetConnectionClose()
 }
 
 func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg) {
@@ -156,5 +166,28 @@ func ResponseJSONLocationAvg(ctx *fasthttp.RequestCtx, data *structs.LocationAvg
     ResponseStatus(ctx, 400)
     return
   }
-  // ctx.SetConnectionClose()
+}
+
+func ResponseJSONLocation(ctx *fasthttp.RequestCtx, data *structs.Location) {
+  ctx.SetStatusCode(200)
+  if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
+    ResponseStatus(ctx, 400)
+    return
+  }
+}
+
+func ResponseJSONUser(ctx *fasthttp.RequestCtx, data *structs.User) {
+  ctx.SetStatusCode(200)
+  if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
+    ResponseStatus(ctx, 400)
+    return
+  }
+}
+
+func ResponseJSONVisit(ctx *fasthttp.RequestCtx, data *structs.Visit) {
+  ctx.SetStatusCode(200)
+  if ffjson.NewEncoder(ctx.Response.BodyWriter()).Encode(data) != nil {
+    ResponseStatus(ctx, 400)
+    return
+  }
 }

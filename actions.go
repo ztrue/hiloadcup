@@ -10,6 +10,33 @@ import (
 var dummyResponse = []byte("{}")
 var nullRequest = []byte("\": null")
 
+func ActionGetLocation(ctx *fasthttp.RequestCtx, bid []byte) {
+  e := GetLocationSafe(string(bid))
+  if e == nil {
+    ResponseStatus(ctx, 404)
+    return
+  }
+  ResponseJSONLocation(ctx, e)
+}
+
+func ActionGetUser(ctx *fasthttp.RequestCtx, bid []byte) {
+  e := GetUserSafe(string(bid))
+  if e == nil {
+    ResponseStatus(ctx, 404)
+    return
+  }
+  ResponseJSONUser(ctx, e)
+}
+
+func ActionGetVisit(ctx *fasthttp.RequestCtx, bid []byte) {
+  e := GetVisitSafe(string(bid))
+  if e == nil {
+    ResponseStatus(ctx, 404)
+    return
+  }
+  ResponseJSONVisit(ctx, e)
+}
+
 func ActionGetUserVisits(ctx *fasthttp.RequestCtx, bid []byte, v *fasthttp.Args) {
   visits, status := GetUserVisits(bid, v)
   if status != 200 {
@@ -68,6 +95,10 @@ func ActionNewVisit(ctx *fasthttp.RequestCtx) {
 }
 
 func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
+  if !LocationExists(string(bid)) {
+    ResponseStatus(ctx, 404)
+    return
+  }
   e := &structs.LocationUp{}
   if checkRequestLocation(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
@@ -81,6 +112,10 @@ func ActionUpdateLocation(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
+  if !UserExists(string(bid)) {
+    ResponseStatus(ctx, 404)
+    return
+  }
   e := &structs.UserUp{}
   if checkRequestUser(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
@@ -94,6 +129,10 @@ func ActionUpdateUser(ctx *fasthttp.RequestCtx, bid []byte) {
 }
 
 func ActionUpdateVisit(ctx *fasthttp.RequestCtx, bid []byte) {
+  if !VisitExists(string(bid)) {
+    ResponseStatus(ctx, 404)
+    return
+  }
   e := &structs.VisitUp{}
   if checkRequestVisit(ctx.PostBody(), e) != 200 {
     ResponseStatus(ctx, 400)
